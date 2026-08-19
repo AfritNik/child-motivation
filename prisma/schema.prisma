@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccessRole {
+  CHILD
+  ADMIN
+  ADULT
+}
+
+enum SubjectPriority {
+  HIGH
+  NORMAL
+  LOW
+}
+
+enum DailyCheckType {
+  SELF_DIRECTED_STUDY
+  PERSONAL_ROUTINE
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PointReason {
+  SELF_DIRECTED_STUDY
+  PERSONAL_ROUTINE
+  CHORE
+  NEW_PRODUCT
+  REWARD
+  CORRECTION
+}
+
+enum RewardRequestStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+}
+
+enum ScreenMode {
+  FULL
+  STANDARD
+  RECOVERY
+}
+
+model User {
+  id                String     @id @default(uuid()) @db.Uuid
+  displayName       String
+  role              AccessRole
+  pinHash           String
+  isActive          Boolean    @default(true)
+  sortOrder         Int        @default(0)
+  createdAt         DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime   @updatedAt @db.Timestamptz(3)
+  pointBalanceLimit Int        @default(100)
+
+  dailyChecks         DailyCheck[]       @relation("ChildDailyChecks")
+  dailyDecisions      DailyCheck[]       @relation("AdultDailyDecisions")
+  choreCompletions    ChoreCompletion[]  @relation("ChildChoreCompletions")
+  choreDecisions      ChoreCompletion[]  @relation("AdultChoreDecisions")
+  newProductEntries   NewProductEntry[]  @relation("ChildNewProductEntries")
+  newProductDecisions NewProductEntry[]  @relation("AdultNewProductDecisions")
+  rewardRequests      RewardRequest[]    @relation("ChildRewardRequests")
+  rewardDecisions     RewardRequest[]    @relation("AdultRewardDecisions")
+  pointTransactions   PointTransaction[]
+  pointCorrections    PointCorrection[]  @relation("ChildPointCorrections")
+  createdCorrections  PointCorrection[]  @relation("AdminPointCorrections")
+
+  @@index([role, isActive])
+}
+
+model DailyCheck {
+  id              String         @id @default(uuid()) @db.Uuid
+  date            DateTime       @db.Date
+  type            DailyCheckType
+  status          ReviewStatus   @default(PENDING)
+  childId         String         @db.Uuid
+  decidedById     String?        @db.Uuid
+  decidedAt       DateTime?      @db.Timestamptz(3)
+  rejectionReason String?
+  createdAt       DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(3)
+
+  child            User              @relation("ChildDailyChecks", fields: [childId], references: [id], onDelete: Restrict)
+  decidedBy        User?             @relation("AdultDailyDecisions", fields: [decidedById], references: [id], onDelete: Restrict)
+  pointTransaction PointTransaction?
+
+  @@unique([childId, date, type])
+  @@index([date, status])
+  @@index([decidedById])
+}
+
+model Chore {
+  id          String            @id @default(uuid()) @db.Uuid
+  name        String            @unique
+  instruction String?
+  isActive    Boolean           @default(true)
+  sortOrder   Int               @default(0)
+  completions ChoreCompletion[]
+
+  @@index([isActive, sortOrder])
+}
+
+model ChoreCompletion {
+  id                String       @id @default(uuid()) @db.Uuid
+  date              DateTime     @db.Date
+  status            ReviewStatus @default(PENDING)
+  childId           String       @db.Uuid
+  choreId           String       @db.Uuid
+  decidedById       String?      @db.Uuid
+  decidedAt         DateTime?    @db.Timestamptz(3)
+  rejectionReason   String?
+  pointsProcessedAt DateTime?    @db.Timestamptz(3)
+  createdAt         DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime     @updatedAt @db.Timestamptz(3)
+
+  child            User              @relation("ChildChoreCompletions", fields: [childId], references: [id], onDelete: Restrict)
+  chore            Chore             @relation(fields: [choreId], references: [id], onDelete: Restrict)
+  decidedBy        User?             @relation("AdultChoreDecisions", fields: [decidedById], references: [id], onDelete: Restrict)
+  pointTransaction PointTransaction?
+
+  @@unique([childId, date, choreId])
+  @@index([date, status])
+  @@index([choreId])
+  @@index([decidedById])
+}
+
+model NewProductEntry {
+  id              String       @id @default(uuid()) @db.Uuid
+  date            DateTime     @db.Date
+  name            String
+  status          ReviewStatus @default(PENDING)
+  childId         String       @db.Uuid
+  decidedById     String?      @db.Uuid
+  decidedAt       DateTime?    @db.Timestamptz(3)
+  rejectionReason String?
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+
+  child            User              @relation("ChildNewProductEntries", fields: [childId], references: [id], onDelete: Restrict)
+  decidedBy        User?             @relation("AdultNewProductDecisions", fields: [decidedById], references: [id], onDelete: Restrict)
+  pointTransaction PointTransaction?
+
+  @@unique([childId, date])
+  @@index([date, status])
+  @@index([decidedById])
+}
+
+model Reward {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String          @unique
+  description String
+  cost        Int
+  isActive    Boolean         @default(true)
+  sortOrder   Int             @default(0)
+  requests    RewardRequest[]
+
+  @@index([isActive, sortOrder])
+}
+
+model RewardRequest {
+  id          String              @id @default(uuid()) @db.Uuid
+  userId      String              @db.Uuid
+  rewardId    String              @db.Uuid
+  cost        Int
+  status      RewardRequestStatus @default(PENDING)
+  decidedById String?             @db.Uuid
+  decidedAt   DateTime?           @db.Timestamptz(3)
+  createdAt   DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime            @updatedAt @db.Timestamptz(3)
+
+  user             User              @relation("ChildRewardRequests", fields: [userId], references: [id], onDelete: Restrict)
+  reward           Reward            @relation(fields: [rewardId], references: [id], onDelete: Restrict)
+  decidedBy        User?             @relation("AdultRewardDecisions", fields: [decidedById], references: [id], onDelete: Restrict)
+  pointTransaction PointTransaction?
+
+  @@index([userId, status, createdAt])
+  @@index([rewardId])
+  @@index([decidedById])
+}
+
+model PointTransaction {
+  id                String      @id @default(uuid()) @db.Uuid
+  userId            String      @db.Uuid
+  dailyCheckId      String?     @unique @db.Uuid
+  choreCompletionId String?     @unique @db.Uuid
+  newProductEntryId String?     @unique @db.Uuid
+  rewardRequestId   String?     @unique @db.Uuid
+  pointCorrectionId String?     @unique @db.Uuid
+  amount            Int
+  reason            PointReason
+  createdAt         DateTime    @default(now()) @db.Timestamptz(3)
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  dailyCheck      DailyCheck?      @relation(fields: [dailyCheckId], references: [id], onDelete: Restrict)
+  choreCompletion ChoreCompletion? @relation(fields: [choreCompletionId], references: [id], onDelete: Restrict)
+  newProductEntry NewProductEntry? @relation(fields: [newProductEntryId], references: [id], onDelete: Restrict)
+  rewardRequest   RewardRequest?   @relation(fields: [rewardRequestId], references: [id], onDelete: Restrict)
+  pointCorrection PointCorrection? @relation(fields: [pointCorrectionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+}
+
+model PointCorrection {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  createdById String   @db.Uuid
+  amount      Int
+  note        String
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  user             User              @relation("ChildPointCorrections", fields: [userId], references: [id], onDelete: Restrict)
+  createdBy        User              @relation("AdminPointCorrections", fields: [createdById], references: [id], onDelete: Restrict)
+  pointTransaction PointTransaction?
+
+  @@index([userId, createdAt])
+  @@index([createdById])
+}
+
+model AcademicQuarter {
+  id            String         @id @default(uuid()) @db.Uuid
+  schoolYear    String
+  number        Int
+  startsOn      DateTime       @db.Date
+  endsOn        DateTime       @db.Date
+  subjects      Subject[]
+  weekDecisions WeekDecision[]
+
+  @@unique([schoolYear, number])
+  @@index([startsOn, endsOn])
+}
+
+model Subject {
+  id             String           @id @default(uuid()) @db.Uuid
+  name           String           @unique
+  priority       SubjectPriority
+  isActive       Boolean          @default(true)
+  sortOrder      Int              @default(0)
+  currentAverage Decimal?         @db.Decimal(3, 2)
+  quarterId      String?          @db.Uuid
+  updatedAt      DateTime         @updatedAt @db.Timestamptz(3)
+  quarter        AcademicQuarter? @relation(fields: [quarterId], references: [id], onDelete: Restrict)
+
+  @@index([isActive, sortOrder])
+}
+
+model ScreenModeSetting {
+  mode              ScreenMode @id
+  dailyLimitMinutes Int
+}
+
+model WeekDecision {
+  id                String          @id @default(uuid()) @db.Uuid
+  startsOn          DateTime        @unique @db.Date
+  endsOn            DateTime        @db.Date
+  mode              ScreenMode
+  dailyLimitMinutes Int
+  explanation       String
+  quarterId         String          @db.Uuid
+  isStale           Boolean         @default(false)
+  calculatedAt      DateTime        @default(now()) @db.Timestamptz(3)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime        @updatedAt @db.Timestamptz(3)
+  quarter           AcademicQuarter @relation(fields: [quarterId], references: [id], onDelete: Restrict)
+
+  @@index([startsOn, isStale])
+  @@index([quarterId])
+}

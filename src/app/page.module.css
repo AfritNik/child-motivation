@@ -1,0 +1,1074 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  padding: 32px 20px 56px;
+}
+
+.main {
+  width: min(100%, 760px);
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 26px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #285f66 0%, #43847b 100%);
+  box-shadow: 0 18px 45px rgb(31 78 79 / 18%);
+}
+
+.balance {
+  flex: 0 0 auto;
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 17%);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.eyebrow {
+  margin-bottom: 12px;
+  color: #55736f;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.main h1 {
+  color: #263b40;
+  font-size: clamp(30px, 7vw, 44px);
+  line-height: 1.08;
+}
+
+.titleRow h1 {
+  color: #ffffff;
+}
+
+.description {
+  margin-top: 18px;
+  color: #5b6d6c;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.roleTabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 24px;
+  padding: 6px;
+  overflow-x: auto;
+  border-radius: 18px;
+  background: #e5ebe6;
+}
+
+.roleTabs a {
+  flex: 1 0 auto;
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 12px;
+  border-radius: 13px;
+  color: #637674;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+}
+
+.roleTabs a > span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 65%);
+  font-size: 14px;
+}
+
+.roleTabs a[aria-current="page"] {
+  background: #ffffff;
+  color: #285f66;
+  box-shadow: 0 5px 16px rgb(38 73 70 / 10%);
+}
+
+.statuses {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.statuses div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f3f6f9;
+}
+
+.statuses dt {
+  color: #53667a;
+}
+
+.statuses dd {
+  color: #17314d;
+  font-weight: 700;
+  text-align: right;
+}
+
+.loginForm {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.loginForm label {
+  color: #53667a;
+  font-weight: 700;
+}
+
+.loginForm input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #c8d4e1;
+  border-radius: 14px;
+  color: #17314d;
+  background: #ffffff;
+  font: inherit;
+  font-size: 28px;
+  letter-spacing: 0.35em;
+  text-align: center;
+}
+
+.loginForm input:focus {
+  border-color: #356ca5;
+  outline: 3px solid rgb(53 108 165 / 16%);
+}
+
+.loginForm button,
+.secondaryButton {
+  min-height: 50px;
+  border: 0;
+  border-radius: 14px;
+  background: #245d95;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.loginForm button:disabled {
+  background: #9baaba;
+  cursor: default;
+}
+
+.error {
+  color: #a32727;
+  font-weight: 700;
+}
+
+.dailyList,
+.choreList,
+.reviewList,
+.decidedList {
+  display: grid;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.dailyItem,
+.choreItem,
+.reviewCard {
+  padding: 19px;
+  border: 1px solid #e5e6df;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(46 65 63 / 6%);
+}
+
+.childSection {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid #e8e6de;
+  border-radius: 26px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 14px 34px rgb(46 65 63 / 7%);
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sectionHeading h2 {
+  color: #17314d;
+  font-size: 24px;
+}
+
+.sectionHeading .eyebrow {
+  margin-bottom: 6px;
+}
+
+.counter,
+.limitHint {
+  color: #44617f;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.counter {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: #edf3f8;
+}
+
+.sectionDescription {
+  margin-top: 10px;
+  color: #68798b;
+  line-height: 1.5;
+}
+
+.dailyItemLabel {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 14px;
+  cursor: pointer;
+}
+
+.dailyItemLabel input {
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+  accent-color: #2d7a51;
+}
+
+.dailyItemLabel span {
+  display: grid;
+  gap: 5px;
+}
+
+.dailyItemLabel strong,
+.reviewCard h3 {
+  color: #17314d;
+  font-size: 18px;
+}
+
+.dailyItemLabel small,
+.reviewCard p,
+.decidedItem small {
+  color: #68798b;
+  line-height: 1.4;
+}
+
+.dailyItemLabel b {
+  color: #2d7a51;
+}
+
+.itemStatus {
+  margin: 12px 0 0 38px;
+  color: #68798b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.itemStatus[data-status="PENDING"] {
+  color: #9a6100;
+}
+
+.itemStatus[data-status="APPROVED"] {
+  color: #26724b;
+}
+
+.itemStatus[data-status="REJECTED"] {
+  color: #a32727;
+}
+
+.productCard {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #d8e0ea;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.productForm {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.productForm label {
+  color: #53667a;
+  font-weight: 700;
+}
+
+.productForm div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.productForm input {
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid #c8d4e1;
+  border-radius: 11px;
+  color: #17314d;
+  font: inherit;
+}
+
+.productForm button {
+  padding: 0 16px;
+  border: 0;
+  border-radius: 11px;
+  background: #245d95;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.productForm button:disabled {
+  background: #9baaba;
+}
+
+.productCard .itemStatus {
+  margin-left: 0;
+}
+
+.textButton {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #7c4b4b;
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.safetyNote {
+  display: block;
+  margin-top: 14px;
+  color: #68798b;
+  line-height: 1.4;
+}
+
+.rewardGrid,
+.rewardHistory {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.rewardCard,
+.rewardDecisionCard {
+  padding: 18px;
+  border: 1px solid #d8e0ea;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.rewardTitle,
+.rewardDecisionCard {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.rewardTitle h3,
+.rewardDecisionCard h3,
+.rewardHistory h3 {
+  color: #17314d;
+}
+
+.rewardTitle strong {
+  flex: 0 0 auto;
+  color: #245d95;
+  font-size: 18px;
+}
+
+.rewardCard > p,
+.rewardDecisionCard p {
+  margin-top: 8px;
+  color: #68798b;
+  line-height: 1.45;
+}
+
+.rewardCard form {
+  margin-top: 14px;
+}
+
+.rewardCard button,
+.rewardActions button {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 11px;
+  background: #245d95;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rewardCard button:disabled,
+.rewardActions button:disabled {
+  background: #a6b2bf;
+  cursor: default;
+}
+
+.rewardDecisionCard > div:first-child {
+  flex: 1;
+}
+
+.rewardDecisionCard small {
+  display: block;
+  margin-top: 9px;
+  color: #68798b;
+}
+
+.rewardActions {
+  display: grid;
+  flex: 0 0 170px;
+  gap: 8px;
+}
+
+.rewardActions .cancelButton {
+  border: 1px solid #d9aaaa;
+  background: #fff5f5;
+  color: #942b2b;
+}
+
+.rewardHistoryItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f3f6f9;
+  color: #17314d;
+}
+
+.rewardHistoryItem strong[data-status="PENDING"] {
+  color: #9a6100;
+}
+
+.rewardHistoryItem strong[data-status="FULFILLED"] {
+  color: #26724b;
+}
+
+.rewardHistoryItem strong[data-status="CANCELLED"] {
+  color: #7c4b4b;
+}
+
+.rewardHistoryItem small {
+  grid-column: 1 / -1;
+  color: #68798b;
+}
+
+.reviewSection {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid #e8e6de;
+  border-radius: 26px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 14px 34px rgb(46 65 63 / 7%);
+}
+
+.reviewSection h2 {
+  margin-bottom: 14px;
+  color: #263b40;
+  font-size: 22px;
+}
+
+.emptyState {
+  padding: 18px;
+  border-radius: 16px;
+  background: #f1f3ee;
+  color: #697877;
+}
+
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.modeCard {
+  padding: 18px;
+  border: 1px solid #e0e5de;
+  border-radius: 20px;
+  background: #f7f8f4;
+}
+
+.modeCard > span,
+.modeCard small {
+  color: #68798b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.modeCard h3 {
+  margin-top: 8px;
+  color: #17314d;
+  font-size: 22px;
+}
+
+.modeCard > strong {
+  display: block;
+  margin-top: 4px;
+  color: #2f716b;
+}
+
+.modeCard p {
+  margin: 10px 0 8px;
+  color: #68798b;
+  line-height: 1.45;
+}
+
+.thresholds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.thresholds span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #e8efea;
+  color: #536d69;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.subjectList {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.subjectRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f1f3ee;
+  color: #263b40;
+}
+
+.subjectRow strong {
+  color: #68798b;
+  font-size: 14px;
+  text-align: right;
+}
+
+.subjectRow strong[data-zone="GREEN"] {
+  color: #26724b;
+  font-size: 18px;
+}
+
+.subjectRow strong[data-zone="YELLOW"] {
+  color: #9a6100;
+  font-size: 18px;
+}
+
+.subjectRow strong[data-zone="RED"] {
+  color: #a32727;
+  font-size: 18px;
+}
+
+.studyNotice,
+.successMessage {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff6df;
+  color: #7b570d;
+  line-height: 1.45;
+}
+
+.successMessage {
+  background: #eaf6ef;
+  color: #26724b;
+}
+
+.studyAdminPanel {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #d8e0ea;
+}
+
+.averageForm,
+.calculateForm {
+  display: grid;
+  gap: 12px;
+}
+
+.averageForm h3 {
+  color: #17314d;
+}
+
+.averageInputs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.averageInputs label {
+  display: grid;
+  gap: 6px;
+  color: #53667a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.averageInputs input {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #c8d4e1;
+  border-radius: 10px;
+  color: #17314d;
+  font: inherit;
+}
+
+.averageForm button,
+.calculateForm button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #2f716b;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.averageForm button:disabled,
+.calculateForm button:disabled {
+  background: #9baaba;
+  cursor: default;
+}
+
+.primaryButton,
+.approveButton {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: #2f716b;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryButton {
+  width: 100%;
+}
+
+.reviewTitle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reviewTitle p {
+  margin-top: 5px;
+}
+
+.rejectForm {
+  display: grid;
+  gap: 7px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8ef;
+}
+
+.rejectForm label {
+  color: #68798b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rejectForm div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.rejectForm input {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #c8d4e1;
+  border-radius: 10px;
+  color: #17314d;
+  font: inherit;
+}
+
+.rejectForm button {
+  padding: 0 14px;
+  border: 1px solid #d9aaaa;
+  border-radius: 10px;
+  background: #fff5f5;
+  color: #942b2b;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.decidedItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f3f6f9;
+  color: #17314d;
+}
+
+.decidedItem strong {
+  text-align: right;
+}
+
+.decidedItem small {
+  grid-column: 1 / -1;
+}
+
+.logoutForm {
+  margin-top: 24px;
+}
+
+.secondaryButton {
+  width: 100%;
+  border: 1px solid #c8d4e1;
+  background: #f3f6f9;
+  color: #17314d;
+}
+
+.overdueSection,
+.historySection {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid #e8e6de;
+  border-radius: 26px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 14px 34px rgb(46 65 63 / 7%);
+}
+
+.overdueList,
+.pointHistoryList {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.overdueDay {
+  overflow: hidden;
+  border: 1px solid #e4dfd2;
+  border-radius: 18px;
+  background: #fffaf0;
+}
+
+.overdueDay summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  color: #324745;
+  cursor: pointer;
+  list-style: none;
+}
+
+.overdueDay summary::-webkit-details-marker {
+  display: none;
+}
+
+.overdueDay summary span {
+  display: grid;
+  gap: 3px;
+}
+
+.overdueDay summary small {
+  color: #7b8178;
+}
+
+.overdueDay summary b {
+  color: #b06f24;
+}
+
+.overdueItems {
+  display: grid;
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+
+.overdueItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.overdueItem form:not(.compactRejectForm) button,
+.approveDayForm button,
+.correctionForm button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 11px;
+  background: #2f716b;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.compactRejectForm {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.compactRejectForm input,
+.correctionForm input {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #d7d9d1;
+  border-radius: 10px;
+  background: #fbfbf8;
+  color: #263b40;
+  font: inherit;
+}
+
+.compactRejectForm button {
+  padding: 0 12px;
+  border: 1px solid #e0b7ad;
+  border-radius: 10px;
+  background: #fff5f1;
+  color: #9a4738;
+  font: inherit;
+  font-weight: 700;
+}
+
+.approveDayForm {
+  padding: 0 14px 14px;
+}
+
+.approveDayForm button {
+  width: 100%;
+}
+
+.moreLink {
+  display: block;
+  margin-top: 14px;
+  padding: 11px;
+  color: #2f716b;
+  font-weight: 800;
+  text-align: center;
+}
+
+.correctionForm {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #f1f5f1;
+}
+
+.correctionForm > div {
+  display: grid;
+  gap: 6px;
+}
+
+.correctionForm label {
+  color: #5f716f;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.correctionForm button,
+.correctionForm .error,
+.correctionForm .successMessage {
+  grid-column: 1 / -1;
+}
+
+.pointHistoryItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f3f4ef;
+}
+
+.pointHistoryItem > div {
+  display: grid;
+  gap: 4px;
+}
+
+.pointHistoryItem small {
+  color: #788582;
+}
+
+.pointHistoryItem b {
+  font-size: 20px;
+}
+
+.pointHistoryItem b[data-sign="positive"] {
+  color: #2f716b;
+}
+
+.pointHistoryItem b[data-sign="negative"] {
+  color: #a84a3d;
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 14px 14px 110px;
+  }
+
+  .main {
+    width: 100%;
+  }
+
+  .titleRow {
+    padding: 20px;
+    border-radius: 23px;
+  }
+
+  .roleTabs {
+    position: fixed;
+    z-index: 20;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    margin: 0;
+    padding: 7px;
+    border: 1px solid rgb(255 255 255 / 80%);
+    background: rgb(239 242 236 / 94%);
+    box-shadow: 0 12px 35px rgb(39 63 60 / 20%);
+    backdrop-filter: blur(14px);
+  }
+
+  .roleTabs a {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 7px 4px;
+    font-size: 11px;
+  }
+
+  .roleTabs a > span {
+    margin: auto;
+  }
+
+  .childSection,
+  .reviewSection,
+  .overdueSection,
+  .historySection {
+    padding: 19px;
+    border-radius: 22px;
+  }
+
+  .statuses div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .statuses dd {
+    text-align: left;
+  }
+
+  .titleRow,
+  .reviewTitle,
+  .sectionHeading,
+  .rewardTitle,
+  .rewardDecisionCard {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .balance {
+    align-self: flex-start;
+  }
+
+  .approveButton {
+    width: 100%;
+  }
+
+  .rejectForm div,
+  .decidedItem,
+  .productForm div {
+    grid-template-columns: 1fr;
+  }
+
+  .rejectForm button {
+    min-height: 44px;
+  }
+
+  .productForm button {
+    min-height: 44px;
+  }
+
+  .rewardActions {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .rewardHistoryItem {
+    grid-template-columns: 1fr;
+  }
+
+  .correctionForm,
+  .overdueItem,
+  .compactRejectForm {
+    grid-template-columns: 1fr;
+  }
+
+  .compactRejectForm {
+    grid-column: auto;
+  }
+
+  .modeGrid,
+  .averageInputs {
+    grid-template-columns: 1fr;
+  }
+
+  .rewardHistoryItem small {
+    grid-column: auto;
+  }
+
+  .decidedItem strong {
+    text-align: left;
+  }
+}
