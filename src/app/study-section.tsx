@@ -33,7 +33,7 @@ function formatDateTime(date: Date): string {
   }).format(date);
 }
 
-export async function StudySection({ canEdit }: { canEdit: boolean }) {
+export async function StudySection({ canEdit, adult = false }: { canEdit: boolean; adult?: boolean }) {
   const dateKey = getMoscowDateKey();
   const today = databaseDateFromKey(dateKey);
   const currentWeek = getMoscowWeekRange(dateKey);
@@ -74,11 +74,11 @@ export async function StudySection({ canEdit }: { canEdit: boolean }) {
   });
 
   return (
-    <section className={canEdit ? styles.reviewSection : styles.childSection}>
+    <section className={adult ? styles.reviewSection : styles.childSection}>
       <div className={styles.sectionHeading}>
         <div>
           <p className={styles.eyebrow}>Учёба</p>
-          <h2>Экранный режим</h2>
+          <h1>Экранный режим</h1>
         </div>
         {quarter ? (
           <span className={styles.counter}>

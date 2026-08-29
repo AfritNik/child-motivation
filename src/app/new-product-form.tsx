@@ -35,7 +35,7 @@ export function NewProductForm({
     return (
       <div className={styles.productCard}>
         <strong>{name}</strong>
-        <p className={styles.itemStatus} data-status={status}>
+        <p className={styles.itemStatus} data-status={status} role="status">
           {status === "APPROVED"
             ? earnedPoint
               ? "Подтверждено · +1"
@@ -66,16 +66,21 @@ export function NewProductForm({
           </button>
         </div>
       </form>
-      {state.error ? <p className={styles.error}>{state.error}</p> : null}
+      {state.error ? <p className={styles.error} role="alert">{state.error}</p> : null}
       {state.saved || status === "PENDING" ? (
-        <p className={styles.itemStatus} data-status="PENDING">
+        <p
+          className={styles.itemStatus}
+          data-status="PENDING"
+          role="status"
+          aria-live="polite"
+        >
           Ожидает подтверждения взрослого
         </p>
       ) : null}
       {status === "PENDING" ? (
         <form action={removeNewProduct}>
-          <button type="submit" className={styles.textButton}>
-            Удалить запись
+          <button type="submit" className={styles.cancelRequestButton}>
+            Отменить запрос
           </button>
         </form>
       ) : null}

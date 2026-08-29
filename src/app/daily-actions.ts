@@ -10,7 +10,8 @@ import {
   getMoscowDateKey,
   isDailyCheckType,
 } from "@/lib/domain/daily-cycle";
-import { createCappedEarning } from "@/lib/points";
+import { createCappedEarning, lockAndGetPointBalance } from "@/lib/points";
+import { setDailyCheckForChild } from "@/lib/child-queue-service";
 import { revalidatePath } from "next/cache";
 
 type DailyActionResult =
@@ -38,38 +39,8 @@ export async function setDailyCheck(
   }
 
   const date = databaseDateFromKey(getMoscowDateKey());
-  const existingCheck = await db.dailyCheck.findUnique({
-    where: {
-      childId_date_type: {
-        childId: user.id,
-        date,
-        type: typeValue,
-      },
-    },
-  });
-
-  if (existingCheck && existingCheck.status !== ReviewStatus.PENDING) {
-    return { ok: false, error: "Взрослый уже принял решение" };
-  }
-
-  if (checked && !existingCheck) {
-    await db.dailyCheck.create({
-      data: {
-        childId: user.id,
-        date,
-        type: typeValue,
-      },
-    });
-  }
-
-  if (!checked && existingCheck) {
-    await db.dailyCheck.deleteMany({
-      where: {
-        id: existingCheck.id,
-        status: ReviewStatus.PENDING,
-      },
-    });
-  }
+  const result = await setDailyCheckForChild(user.id, date, typeValue, checked);
+  if (!result.ok) return result;
 
   revalidatePath("/");
   return { ok: true };
@@ -85,28 +56,18 @@ async function getAdult() {
   return user;
 }
 
-export async function approveDailyChecks(formData: FormData): Promise<void> {
+export async function approveDailyChecks(formData: FormData): Promise<DailyActionResult> {
   const adult = await getAdult();
 
   if (!adult) {
-    return;
+    return { ok: false, error: "Действие недоступно" };
   }
 
-  const checkIds = [
-    ...new Set(
-      formData
-        .getAll("checkId")
-        .filter((value): value is string => typeof value === "string")
-        .filter((value) => UUID_PATTERN.test(value)),
-    ),
-  ].slice(0, 2);
+  const submitted = formData.getAll("checkId");
+  if (submitted.length !== 1 || typeof submitted[0] !== "string" || !UUID_PATTERN.test(submitted[0])) return { ok: false, error: "Некорректные данные" };
+  const checkId = submitted[0];
 
-  if (checkIds.length === 0) {
-    return;
-  }
-
-  await db.$transaction(async (transaction) => {
-    for (const checkId of checkIds) {
+  const updated = await db.$transaction(async (transaction) => {
       const check = await transaction.dailyCheck.findFirst({
         where: {
           id: checkId,
@@ -115,8 +76,10 @@ export async function approveDailyChecks(formData: FormData): Promise<void> {
       });
 
       if (!check) {
-        continue;
+        return false;
       }
+
+      await lockAndGetPointBalance(transaction, check.childId);
 
       const update = await transaction.dailyCheck.updateMany({
         where: {
@@ -132,7 +95,7 @@ export async function approveDailyChecks(formData: FormData): Promise<void> {
       });
 
       if (update.count !== 1) {
-        continue;
+        return false;
       }
 
       const definition = DAILY_ITEM_DEFINITIONS[check.type];
@@ -143,17 +106,19 @@ export async function approveDailyChecks(formData: FormData): Promise<void> {
         reason: definition.reason,
         source: { dailyCheckId: check.id },
       });
-    }
+      return true;
   });
+  if (!updated) return { ok: false, error: "Очередь изменилась — проверьте снова" };
 
   revalidatePath("/");
+  return { ok: true };
 }
 
-export async function rejectDailyCheck(formData: FormData): Promise<void> {
+export async function rejectDailyCheck(formData: FormData): Promise<DailyActionResult> {
   const adult = await getAdult();
 
   if (!adult) {
-    return;
+    return { ok: false, error: "Действие недоступно" };
   }
 
   const checkId = formData.get("checkId");
@@ -164,16 +129,16 @@ export async function rejectDailyCheck(formData: FormData): Promise<void> {
     !UUID_PATTERN.test(checkId) ||
     typeof rejectionReason !== "string"
   ) {
-    return;
+    return { ok: false, error: "Некорректные данные" };
   }
 
   const normalizedReason = rejectionReason.trim();
 
   if (normalizedReason.length < 2 || normalizedReason.length > 200) {
-    return;
+    return { ok: false, error: "Причина должна содержать от 2 до 200 символов" };
   }
 
-  await db.dailyCheck.updateMany({
+  const update = await db.dailyCheck.updateMany({
     where: {
       id: checkId,
       status: ReviewStatus.PENDING,
@@ -185,6 +150,8 @@ export async function rejectDailyCheck(formData: FormData): Promise<void> {
       rejectionReason: normalizedReason,
     },
   });
+  if (update.count !== 1) return { ok: false, error: "Очередь изменилась — проверьте снова" };
 
   revalidatePath("/");
+  return { ok: true };
 }

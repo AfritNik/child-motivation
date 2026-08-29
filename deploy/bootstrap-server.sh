@@ -9,7 +9,7 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update
-apt-get install -y docker.io docker-compose-v2 nginx snapd age jq
+apt-get install -y docker.io docker-compose-v2 nginx snapd
 
 systemctl enable --now docker
 systemctl enable --now nginx
@@ -41,9 +41,3 @@ else
 fi
 
 ln -sf /snap/bin/certbot /usr/local/bin/certbot
-
-if snap list aws-cli >/dev/null 2>&1; then
-  snap refresh aws-cli
-else
-  snap install aws-cli --classic
-fi

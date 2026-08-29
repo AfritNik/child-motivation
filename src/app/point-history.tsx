@@ -13,6 +13,10 @@ function formatTransactionDate(date: Date): string {
   }).format(date);
 }
 
+function formatSourceDate(date: Date): string {
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short", timeZone: "UTC" }).format(date);
+}
+
 function transactionDescription(transaction: {
   reason: PointReason;
   dailyCheck: { type: DailyCheckType } | null;
@@ -43,9 +47,13 @@ function transactionDescription(transaction: {
 export async function PointHistory({
   userId,
   canCorrect,
+  currentBalance,
+  balanceLimit,
 }: {
   userId: string;
   canCorrect: boolean;
+  currentBalance?: number;
+  balanceLimit?: number;
 }) {
   const transactions = await db.pointTransaction.findMany({
     where: { userId },
@@ -59,7 +67,7 @@ export async function PointHistory({
       },
     },
     orderBy: { createdAt: "desc" },
-    take: canCorrect ? 20 : 10,
+    take: 20,
   });
 
   return (
@@ -70,7 +78,7 @@ export async function PointHistory({
           <h2>История баллов</h2>
         </div>
       </div>
-      {canCorrect ? <PointCorrectionForm /> : null}
+      {canCorrect && currentBalance !== undefined && balanceLimit !== undefined ? <PointCorrectionForm currentBalance={currentBalance} balanceLimit={balanceLimit} /> : null}
       <div className={styles.pointHistoryList}>
         {transactions.length === 0 ? (
           <p className={styles.emptyState}>Операций пока нет.</p>
@@ -79,7 +87,11 @@ export async function PointHistory({
             <div key={transaction.id} className={styles.pointHistoryItem}>
               <div>
                 <strong>{transactionDescription(transaction)}</strong>
-                <small>{formatTransactionDate(transaction.createdAt)}</small>
+                <small>
+                  {transaction.dailyCheck?.date || transaction.choreCompletion?.date || transaction.newProductEntry?.date
+                    ? `за ${formatSourceDate(transaction.dailyCheck?.date ?? transaction.choreCompletion?.date ?? transaction.newProductEntry!.date)} · решено ${formatTransactionDate(transaction.createdAt)}`
+                    : formatTransactionDate(transaction.createdAt)}
+                </small>
               </div>
               <b data-sign={transaction.amount > 0 ? "positive" : "negative"}>
                 {transaction.amount > 0 ? "+" : ""}{transaction.amount}

@@ -20,6 +20,7 @@ import {
 } from "./chores-products-actions";
 import { approveDailyChecks, rejectDailyCheck } from "./daily-actions";
 import { approveOverdueDay } from "./overdue-actions";
+import { ConfirmActionDialog, RejectActionDialog } from "./action-dialog";
 import styles from "./page.module.css";
 
 type PendingDay = {
@@ -29,22 +30,25 @@ type PendingDay = {
   products: Awaited<ReturnType<typeof loadPendingData>>[2];
 };
 
-async function loadPendingData(childId: string, today: Date) {
-  return Promise.all([
-    db.dailyCheck.findMany({
-      where: { childId, date: { lt: today }, status: ReviewStatus.PENDING },
-      orderBy: { date: "asc" },
-    }),
-    db.choreCompletion.findMany({
-      where: { childId, date: { lt: today }, status: ReviewStatus.PENDING },
-      include: { chore: true },
-      orderBy: [{ date: "asc" }, { createdAt: "asc" }],
-    }),
-    db.newProductEntry.findMany({
-      where: { childId, date: { lt: today }, status: ReviewStatus.PENDING },
-      orderBy: { date: "asc" },
-    }),
+const PAGE_SIZE = 5;
+
+async function loadPendingData(childId: string, today: Date, cursor?: string) {
+  const cursorDate = cursor && /^\d{4}-\d{2}-\d{2}$/.test(cursor) ? databaseDateFromKey(cursor) : undefined;
+  const where = { childId, date: { lt: today, ...(cursorDate ? { gt: cursorDate } : {}) }, status: ReviewStatus.PENDING };
+  const [checkDates, choreDates, productDates] = await Promise.all([
+    db.dailyCheck.findMany({ where, select: { date: true }, distinct: ["date"], orderBy: { date: "asc" }, take: PAGE_SIZE + 1 }),
+    db.choreCompletion.findMany({ where, select: { date: true }, distinct: ["date"], orderBy: { date: "asc" }, take: PAGE_SIZE + 1 }),
+    db.newProductEntry.findMany({ where, select: { date: true }, distinct: ["date"], orderBy: { date: "asc" }, take: PAGE_SIZE + 1 }),
   ]);
+  const keys = [...new Set([...checkDates, ...choreDates, ...productDates].map((item) => dateKey(item.date)))].sort();
+  const selectedDates = keys.slice(0, PAGE_SIZE).map(databaseDateFromKey);
+  const selectedWhere = { childId, date: { in: selectedDates }, status: ReviewStatus.PENDING };
+  const [checks, chores, products] = await Promise.all([
+    db.dailyCheck.findMany({ where: selectedWhere, orderBy: [{ date: "asc" }, { createdAt: "asc" }] }),
+    db.choreCompletion.findMany({ where: selectedWhere, include: { chore: true }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] }),
+    db.newProductEntry.findMany({ where: selectedWhere, orderBy: [{ date: "asc" }, { createdAt: "asc" }] }),
+  ]);
+  return [checks, chores, products, keys.length > PAGE_SIZE] as const;
 }
 
 function dateKey(date: Date): string {
@@ -55,15 +59,15 @@ export async function OverdueSection({
   childId,
   balance,
   balanceLimit,
-  visibleDays,
+  cursor,
 }: {
   childId: string;
   balance: number;
   balanceLimit: number;
-  visibleDays: number;
+  cursor?: string;
 }) {
   const today = databaseDateFromKey(getMoscowDateKey());
-  const [checks, chores, products] = await loadPendingData(childId, today);
+  const [checks, chores, products, hasMore] = await loadPendingData(childId, today, cursor);
   const grouped = new Map<string, PendingDay>();
 
   const getDay = (key: string): PendingDay => {
@@ -85,13 +89,17 @@ export async function OverdueSection({
   if (days.length === 0) return null;
 
   const allDates = days.map((day) => databaseDateFromKey(day.dateKey));
+  const productWeeks = [...new Map(days.map((day) => {
+    const range = getMoscowWeekRange(day.dateKey);
+    return [range.startsOn.toISOString(), range];
+  })).values()];
   const [allChores, allProducts] = await Promise.all([
     db.choreCompletion.findMany({
       where: { childId, date: { in: allDates } },
       include: { pointTransaction: true },
     }),
     db.newProductEntry.findMany({
-      where: { childId },
+      where: { childId, OR: productWeeks.map((range) => ({ date: { gte: range.startsOn, lt: range.endsBefore } })) },
       include: { pointTransaction: true },
     }),
   ]);
@@ -103,14 +111,14 @@ export async function OverdueSection({
           <p className={styles.eyebrow}>Не потеряно</p>
           <h2>Просроченные дни</h2>
         </div>
-        <span className={styles.counter}>{days.length}</span>
+        <span className={styles.counter}>{days.length}{hasMore ? "+" : ""}</span>
       </div>
       <p className={styles.sectionDescription}>
         Сначала раскройте день и проверьте действия. Общего подтверждения всех
         дней нет.
       </p>
       <div className={styles.overdueList}>
-        {days.slice(0, visibleDays).map((day) => {
+        {days.map((day) => {
           const awardedChores = allChores.filter(
             (chore) => dateKey(chore.date) === day.dateKey && chore.pointTransaction,
           ).length;
@@ -154,59 +162,47 @@ export async function OverdueSection({
                 {day.checks.map((check) => (
                   <article key={check.id} className={styles.overdueItem}>
                     <strong>{DAILY_ITEM_DEFINITIONS[check.type].label}</strong>
-                    <form action={approveDailyChecks}>
-                      <input type="hidden" name="checkId" value={check.id} />
-                      <button type="submit">Подтвердить</button>
-                    </form>
-                    <form action={rejectDailyCheck} className={styles.compactRejectForm}>
-                      <input type="hidden" name="checkId" value={check.id} />
-                      <input name="rejectionReason" minLength={2} maxLength={200} required placeholder="Причина" />
-                      <button type="submit">Отклонить</button>
-                    </form>
+                    <ConfirmActionDialog action={approveDailyChecks} fields={[{ name: "checkId", value: check.id }]} triggerLabel="Подтвердить" title="Подтвердить действие?" description={`${DAILY_ITEM_DEFINITIONS[check.type].label}. Баллы относятся к исходной дате.`} confirmLabel="Подтвердить" triggerClassName={styles.approveTrigger} />
+                    <RejectActionDialog action={rejectDailyCheck} idName="checkId" idValue={check.id} itemLabel={DAILY_ITEM_DEFINITIONS[check.type].label} />
                   </article>
                 ))}
                 {day.chores.map((chore) => (
                   <article key={chore.id} className={styles.overdueItem}>
                     <strong>{chore.chore.name}</strong>
-                    <form action={approveChoreCompletions}>
-                      <input type="hidden" name="completionId" value={chore.id} />
-                      <button type="submit">Подтвердить</button>
-                    </form>
-                    <form action={rejectChoreCompletion} className={styles.compactRejectForm}>
-                      <input type="hidden" name="completionId" value={chore.id} />
-                      <input name="rejectionReason" minLength={2} maxLength={200} required placeholder="Причина" />
-                      <button type="submit">Отклонить</button>
-                    </form>
+                    <ConfirmActionDialog action={approveChoreCompletions} fields={[{ name: "completionId", value: chore.id }]} triggerLabel="Подтвердить" title="Подтвердить дело?" description={`${chore.chore.name}. Баллы относятся к исходной дате.`} confirmLabel="Подтвердить" triggerClassName={styles.approveTrigger} />
+                    <RejectActionDialog action={rejectChoreCompletion} idName="completionId" idValue={chore.id} itemLabel={chore.chore.name} />
                   </article>
                 ))}
                 {day.products.map((product) => (
                   <article key={product.id} className={styles.overdueItem}>
                     <strong>Новый продукт: {product.name}</strong>
-                    <form action={approveNewProduct}>
-                      <input type="hidden" name="entryId" value={product.id} />
-                      <button type="submit">Подтвердить</button>
-                    </form>
-                    <form action={rejectNewProduct} className={styles.compactRejectForm}>
-                      <input type="hidden" name="entryId" value={product.id} />
-                      <input name="rejectionReason" minLength={2} maxLength={200} required placeholder="Причина" />
-                      <button type="submit">Отклонить</button>
-                    </form>
+                    <ConfirmActionDialog action={approveNewProduct} fields={[{ name: "entryId", value: product.id }]} triggerLabel="Подтвердить" title="Подтвердить продукт?" description={`${product.name}. Недельный лимит проверится по исходной дате.`} confirmLabel="Подтвердить" triggerClassName={styles.approveTrigger} />
+                    <RejectActionDialog action={rejectNewProduct} idName="entryId" idValue={product.id} itemLabel={`Новый продукт: ${product.name}`} />
                   </article>
                 ))}
               </div>
-              <form action={approveOverdueDay} className={styles.approveDayForm}>
-                {day.checks.map((check) => <input key={check.id} type="hidden" name="checkId" value={check.id} />)}
-                {day.chores.map((chore) => <input key={chore.id} type="hidden" name="completionId" value={chore.id} />)}
-                {day.products.map((product) => <input key={product.id} type="hidden" name="entryId" value={product.id} />)}
-                <button type="submit">Подтвердить этот день</button>
-              </form>
+              <div className={styles.approveDayForm}>
+                <ConfirmActionDialog
+                  action={approveOverdueDay}
+                  fields={[
+                    ...day.checks.map((check) => ({ name: "checkId", value: check.id })),
+                    ...day.chores.map((chore) => ({ name: "completionId", value: chore.id })),
+                    ...day.products.map((product) => ({ name: "entryId", value: product.id })),
+                  ]}
+                  triggerLabel="Подтвердить этот день"
+                  title={`Подтвердить ${formatMoscowDate(day.dateKey)}?`}
+                  description={`Будет заработано +${potential}, зачислено +${expected}, не зачислено из-за лимита: ${potential - expected}. Баланс: ${balance} → ${balance + expected}. Сервер повторно проверит точный состав очереди.`}
+                  confirmLabel="Подтвердить день"
+                  triggerClassName={styles.adultPrimaryButton}
+                />
+              </div>
             </details>
           );
         })}
       </div>
-      {days.length > visibleDays ? (
-        <Link href={`/?tab=review&overdue=${visibleDays + 5}`} className={styles.moreLink}>
-          Показать ещё
+      {hasMore ? (
+        <Link href={`/?tab=review&overdueCursor=${days.at(-1)!.dateKey}`} className={styles.moreLink}>
+          Следующие просроченные дни
         </Link>
       ) : null}
     </section>

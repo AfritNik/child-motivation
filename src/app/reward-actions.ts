@@ -9,10 +9,12 @@ import { hasPermission } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { lockAndGetPointBalance } from "@/lib/points";
+import { cancelRewardRequestById, fulfillRewardRequestById } from "@/lib/reward-service";
 import { revalidatePath } from "next/cache";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+type RewardActionResult = { ok: true } | { ok: false; error: string };
 
 async function getChild() {
   const user = await getCurrentUser();
@@ -82,7 +84,7 @@ export async function requestReward(formData: FormData): Promise<void> {
   revalidatePath("/");
 }
 
-export async function fulfillRewardRequest(formData: FormData): Promise<void> {
+export async function fulfillRewardRequest(formData: FormData): Promise<RewardActionResult> {
   const adult = await getAdult();
   const requestId = formData.get("requestId");
 
@@ -91,56 +93,42 @@ export async function fulfillRewardRequest(formData: FormData): Promise<void> {
     typeof requestId !== "string" ||
     !UUID_PATTERN.test(requestId)
   ) {
-    return;
+    return { ok: false, error: "Некорректные данные или действие недоступно" };
   }
 
-  await db.$transaction(async (transaction) => {
-    const request = await transaction.rewardRequest.findFirst({
-      where: { id: requestId, status: RewardRequestStatus.PENDING },
-    });
-
-    if (!request) {
-      return;
-    }
-
-    const account = await lockAndGetPointBalance(transaction, request.userId);
-
-    if (account.balance < request.cost) {
-      return;
-    }
-
-    const update = await transaction.rewardRequest.updateMany({
-      where: { id: request.id, status: RewardRequestStatus.PENDING },
-      data: {
-        status: RewardRequestStatus.FULFILLED,
-        decidedById: adult.id,
-        decidedAt: new Date(),
-      },
-    });
-
-    if (update.count !== 1) {
-      return;
-    }
-
-    await transaction.pointTransaction.create({
-      data: {
-        userId: request.userId,
-        rewardRequestId: request.id,
-        amount: -request.cost,
-        reason: PointReason.REWARD,
-      },
-    });
-  });
+  const result = await fulfillRewardRequestById(requestId, adult.id);
+  if (result === "balance") return { ok: false, error: "На балансе уже недостаточно баллов" };
+  if (result === "stale") return { ok: false, error: "Запрос уже изменился — обновите страницу" };
 
   revalidatePath("/");
+  return { ok: true };
 }
 
-export async function cancelRewardRequest(formData: FormData): Promise<void> {
+export async function cancelRewardRequest(formData: FormData): Promise<RewardActionResult> {
   const adult = await getAdult();
   const requestId = formData.get("requestId");
 
   if (
     !adult ||
+    typeof requestId !== "string" ||
+    !UUID_PATTERN.test(requestId)
+  ) {
+    return { ok: false, error: "Некорректные данные или действие недоступно" };
+  }
+
+  const result = await cancelRewardRequestById(requestId, adult.id);
+  if (result === "stale") return { ok: false, error: "Запрос уже изменился — обновите страницу" };
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function cancelOwnRewardRequest(formData: FormData): Promise<void> {
+  const child = await getChild();
+  const requestId = formData.get("requestId");
+
+  if (
+    !child ||
     typeof requestId !== "string" ||
     !UUID_PATTERN.test(requestId)
   ) {
@@ -148,26 +136,30 @@ export async function cancelRewardRequest(formData: FormData): Promise<void> {
   }
 
   await db.rewardRequest.updateMany({
-    where: { id: requestId, status: RewardRequestStatus.PENDING },
+    where: {
+      id: requestId,
+      userId: child.id,
+      status: RewardRequestStatus.PENDING,
+    },
     data: {
       status: RewardRequestStatus.CANCELLED,
-      decidedById: adult.id,
       decidedAt: new Date(),
+      decidedById: null,
     },
   });
 
   revalidatePath("/");
 }
 
-export async function grantRewardDirectly(formData: FormData): Promise<void> {
+export async function grantRewardDirectly(formData: FormData): Promise<RewardActionResult> {
   const adult = await getAdult();
   const rewardId = formData.get("rewardId");
 
   if (!adult || typeof rewardId !== "string" || !UUID_PATTERN.test(rewardId)) {
-    return;
+    return { ok: false, error: "Некорректные данные или действие недоступно" };
   }
 
-  await db.$transaction(async (transaction) => {
+  const result = await db.$transaction(async (transaction) => {
     const [reward, child] = await Promise.all([
       transaction.reward.findFirst({
         where: { id: rewardId, isActive: true },
@@ -180,13 +172,13 @@ export async function grantRewardDirectly(formData: FormData): Promise<void> {
     ]);
 
     if (!reward || !child) {
-      return;
+      return "missing" as const;
     }
 
     const account = await lockAndGetPointBalance(transaction, child.id);
 
     if (account.balance < reward.cost) {
-      return;
+      return "balance" as const;
     }
 
     const request = await transaction.rewardRequest.create({
@@ -208,7 +200,11 @@ export async function grantRewardDirectly(formData: FormData): Promise<void> {
         reason: PointReason.REWARD,
       },
     });
+    return "ok" as const;
   });
+  if (result === "missing") return { ok: false, error: "Награда больше недоступна" };
+  if (result === "balance") return { ok: false, error: "На балансе уже недостаточно баллов" };
 
   revalidatePath("/");
+  return { ok: true };
 }

@@ -30,7 +30,6 @@ install -d -m 0755 /opt/child-motivation
   printf 'PIN_SASHA=%s\n' "$PIN_SASHA"
   printf 'PIN_PAPA=%s\n' "$PIN_PAPA"
   printf 'PIN_GRANDPA=%s\n' "$PIN_GRANDPA"
-  printf 'BACKUP_BUCKET=%s\n' 'afritnik-child-motivation-backups'
 } > /opt/child-motivation/.env.production
 
 chmod 600 /opt/child-motivation/.env.production

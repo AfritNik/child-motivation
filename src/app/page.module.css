@@ -360,6 +360,24 @@
   cursor: pointer;
 }
 
+.cancelRequestButton {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  color: var(--color-brand-strong);
+  background: var(--color-surface-muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cancelRequestButton:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+  opacity: 0.7;
+}
+
 .safetyNote {
   display: block;
   margin-top: 14px;
@@ -645,6 +663,7 @@
 }
 
 .averageInputs input {
+  min-height: 44px;
   min-width: 0;
   padding: 11px 12px;
   border: 1px solid #c8d4e1;
@@ -858,6 +877,7 @@
 
 .compactRejectForm input,
 .correctionForm input {
+  min-height: 44px;
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid #d7d9d1;
@@ -1071,4 +1091,773 @@
   .decidedItem strong {
     text-align: left;
   }
+}
+
+/* Child application shell. It intentionally uses only the light token set. */
+.childPage {
+  width: min(100%, 560px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  color: var(--color-text);
+  background: var(--color-canvas);
+}
+
+.childTopbar {
+  position: sticky;
+  z-index: 30;
+  top: 0;
+  display: flex;
+  min-height: 78px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: rgb(255 254 251 / 94%);
+  backdrop-filter: blur(16px);
+}
+
+.childTopbar > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.childTopbar small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.childTopbar > div:first-child strong {
+  overflow: hidden;
+  font-size: 18px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.childTopActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.childBalance {
+  display: grid;
+  min-width: 94px;
+  min-height: 46px;
+  align-content: center;
+  padding: 5px 13px;
+  border-radius: 14px;
+  color: var(--color-brand-strong);
+  background: var(--color-brand-soft);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.childBalance small {
+  color: var(--color-brand);
+  font-size: 10px;
+}
+
+.childBalance strong {
+  font-size: 16px;
+  line-height: 1.05;
+}
+
+.iconButton {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.childContent {
+  display: grid;
+  gap: 14px;
+  padding: 18px 16px 24px;
+}
+
+.childHero {
+  padding: 22px;
+  border-radius: 24px;
+  color: #fff;
+  background: linear-gradient(145deg, var(--color-brand-strong), #2f7469);
+  box-shadow: 0 16px 36px rgb(23 76 69 / 18%);
+}
+
+.childHero > p:first-child {
+  color: rgb(255 255 255 / 72%);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.childHero h1 {
+  margin-top: 3px;
+  font-size: clamp(30px, 9vw, 40px);
+  line-height: 1.08;
+}
+
+.childStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.childStats span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 15px;
+  background: rgb(255 255 255 / 10%);
+}
+
+.childStats small {
+  overflow: hidden;
+  color: rgb(255 255 255 / 72%);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.childStats strong {
+  font-size: 23px;
+}
+
+.heroHint {
+  margin-top: 12px;
+  color: rgb(255 255 255 / 78%);
+  font-size: 12px;
+}
+
+.compactList {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.compactList .dailyItem {
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.summaryLink {
+  display: grid;
+  min-height: 76px;
+  grid-template-columns: 42px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.summaryLink > span:nth-child(2) {
+  display: grid;
+  gap: 4px;
+}
+
+.summaryLink small {
+  color: var(--color-text-muted);
+  line-height: 1.35;
+}
+
+.rowIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--color-brand);
+  background: var(--color-brand-soft);
+}
+
+.productSection,
+.rewardShortcut {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.productSection {
+  padding: 18px;
+}
+
+.productSection h2 {
+  font-size: 19px;
+}
+
+.productSection .productCard {
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+}
+
+.rewardShortcut {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.rewardShortcut span {
+  display: grid;
+  gap: 3px;
+}
+
+.rewardShortcut small {
+  color: var(--color-text-muted);
+}
+
+.bottomTabs {
+  position: fixed;
+  z-index: 40;
+  right: max(0px, calc((100vw - 560px) / 2));
+  bottom: 0;
+  left: max(0px, calc((100vw - 560px) / 2));
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 7px 8px calc(8px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border);
+  background: rgb(255 254 251 / 96%);
+  box-shadow: 0 -8px 24px rgb(27 50 43 / 8%);
+  backdrop-filter: blur(16px);
+}
+
+.bottomTabs a {
+  display: grid;
+  min-width: 0;
+  min-height: 58px;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  padding: 4px 2px;
+  border-radius: 14px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.bottomTabs a[aria-current="page"] {
+  color: var(--color-brand-strong);
+  background: var(--color-brand-soft);
+}
+
+.tabIcon {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+}
+
+.tabIcon svg {
+  display: block;
+}
+
+.childPage .childSection,
+.childPage .historySection {
+  margin-top: 0;
+  padding: 18px;
+  border-color: var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.childPage .childSection h1,
+.childPage .childSection h2,
+.childPage .historySection h2 {
+  color: var(--color-text);
+  font-size: 25px;
+}
+
+.childPage .dailyList,
+.childPage .choreList {
+  margin-top: 16px;
+}
+
+.childPage .dailyItem,
+.childPage .choreItem,
+.childPage .rewardCard {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  box-shadow: none;
+}
+
+.childPage .dailyItemLabel input {
+  width: 26px;
+  height: 26px;
+  accent-color: var(--color-brand);
+}
+
+.childPage .dailyItemLabel strong {
+  color: var(--color-text);
+}
+
+.childPage .dailyItemLabel b {
+  color: var(--color-success);
+}
+
+.childPage .productForm input {
+  min-height: 46px;
+}
+
+.childPage .productForm button,
+.childPage .rewardCard button {
+  min-height: 46px;
+  background: var(--color-brand);
+}
+
+.childPage .modeGrid {
+  grid-template-columns: 1fr;
+}
+
+.childPage .childChoresHeading {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.childPage .childChoresHeading > div {
+  min-width: 0;
+}
+
+.childPage .childChoresHeading h1 {
+  font-size: clamp(21px, 6.5vw, 25px);
+}
+
+.childPage .childChoresHeading .counter {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.childPage .rewardHistoryItem form {
+  grid-column: 1 / -1;
+}
+
+.childPage .rewardHistoryItem .cancelRequestButton {
+  width: 100%;
+  margin-top: 5px;
+}
+
+@media (max-width: 360px) {
+  .childTopbar {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .childTopbar > div:first-child strong {
+    font-size: 16px;
+  }
+
+  .childBalance {
+    padding-inline: 10px;
+  }
+
+  .childContent {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .childHero {
+    padding: 19px;
+  }
+
+  .dailyItemLabel {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 9px;
+  }
+
+  .dailyItem,
+  .choreItem {
+    padding: 15px 12px;
+  }
+}
+
+.loadingPage,
+.errorPage {
+  width: min(100%, 560px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 24px 14px;
+}
+
+.loadingPage {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.loadingPage p {
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.loadingHeader,
+.loadingHero,
+.loadingCard {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: linear-gradient(90deg, #e8ece9, #f7f8f6, #e8ece9);
+  background-size: 200% 100%;
+  animation: loadingShimmer 1.4s ease-in-out infinite;
+}
+
+.loadingHeader { height: 64px; }
+.loadingHero { height: 188px; }
+.loadingCard { height: 94px; }
+
+.errorPage {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.errorPage p:not(.eyebrow) {
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.errorPage button {
+  min-height: 48px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 14px;
+  color: #fff;
+  background: var(--color-brand);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@keyframes loadingShimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingHeader,
+  .loadingHero,
+  .loadingCard {
+    animation: none;
+  }
+}
+
+.adultPage {
+  width: min(100%, 680px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  color: var(--color-text);
+  background: var(--color-canvas);
+}
+
+.adultTopbar {
+  position: sticky;
+  z-index: 30;
+  top: 0;
+  display: flex;
+  min-height: 78px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: rgb(255 254 251 / 94%);
+  backdrop-filter: blur(16px);
+}
+
+.adultTopbar > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.adultTopbar small,
+.adultBalance small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adultTopbar > div:first-child strong {
+  overflow: hidden;
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adultTopActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.adultBalance {
+  display: grid;
+  min-width: 108px;
+  min-height: 46px;
+  align-content: center;
+  padding: 5px 12px;
+  border-radius: 14px;
+  color: var(--color-brand-strong);
+  background: var(--color-brand-soft);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.adultBalance strong { font-size: 15px; }
+
+.adultContent {
+  display: grid;
+  gap: 14px;
+  padding: 18px 16px 24px;
+}
+
+.adultHero {
+  padding: 22px;
+  border-radius: 24px;
+  color: #fff;
+  background: linear-gradient(145deg, #263d54, #315f67);
+  box-shadow: 0 16px 36px rgb(25 52 67 / 17%);
+}
+
+.adultHero > p { color: rgb(255 255 255 / 72%); font-size: 13px; font-weight: 700; }
+.adultHero > div { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 5px; }
+.adultHero h1 { font-size: clamp(28px, 8vw, 38px); line-height: 1.1; }
+.adultHero strong { flex: 0 0 auto; font-size: 14px; }
+.adultHeroEmpty > div { display: grid; align-items: start; justify-content: stretch; gap: 6px; }
+.adultHeroEmpty h1 { width: 100%; max-width: none; font-size: clamp(28px, 7vw, 34px); }
+.adultHeroEmpty strong { justify-self: start; }
+
+.adultPanel,
+.adultPage .reviewSection,
+.adultPage .overdueSection,
+.adultPage .historySection {
+  margin-top: 0;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.adultSectionHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adultSectionHeading h2 { font-size: 21px; }
+.adultSectionHeading h1 { font-size: 28px; }
+.adultSectionHeading .eyebrow { margin-bottom: 4px; }
+
+.adultQueue,
+.adultDecisionList {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.adultQueueItem {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 5px 10px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: #fbfcfa;
+}
+
+.queueDot {
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #d49a2e;
+}
+
+.adultQueueItem > div:nth-child(2) { display: grid; gap: 3px; }
+.adultQueueItem small { color: var(--color-text-muted); }
+
+.queueActions {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 7px;
+}
+
+.approveTrigger,
+.rejectTrigger,
+.adultPrimaryButton {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.approveTrigger,
+.adultPrimaryButton {
+  border: 0;
+  color: #fff;
+  background: var(--color-brand);
+}
+
+.rejectTrigger {
+  border: 1px solid #dfb9b2;
+  color: var(--color-danger);
+  background: #fff7f5;
+}
+
+.adultPrimaryButton { width: 100%; min-height: 48px; margin-top: 4px; }
+
+.adultDecisionItem {
+  display: grid;
+  gap: 4px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: var(--color-surface-muted);
+}
+
+.adultDecisionItem strong { color: var(--color-success); }
+.adultDecisionItem strong[data-status="REJECTED"] { color: var(--color-danger); }
+.adultDecisionItem small { color: var(--color-text-muted); }
+
+.adultBottomTabs {
+  right: max(0px, calc((100vw - 680px) / 2));
+  left: max(0px, calc((100vw - 680px) / 2));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.adultPage .overdueItem {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.adultPage .overdueItem > strong {
+  grid-column: 1 / -1;
+}
+
+.adultPage .overdueItem > button {
+  width: 100%;
+}
+
+.adultPage .overdueSection > .sectionHeading {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.adultPage .overdueSection > .sectionHeading .counter {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 32px;
+}
+
+.adultPage .approveDayForm .adultPrimaryButton { min-height: 48px; }
+
+.saveFirstMessage { color: var(--color-warning-text, #765000); font-weight: 700; }
+
+.adultPage .rewardCard > button {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.tabIcon { position: relative; }
+
+.tabBadge {
+  display: grid;
+  position: absolute;
+  top: -7px;
+  right: -11px;
+  min-width: 19px;
+  height: 19px;
+  place-items: center;
+  padding: 0 5px;
+  border: 2px solid var(--color-surface);
+  border-radius: 99px;
+  color: #4b3500;
+  background: #efc665;
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1;
+}
+
+.actionDialog {
+  width: min(calc(100% - 28px), 430px);
+  max-height: calc(100dvh - 28px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: 0 24px 70px rgb(20 38 32 / 28%);
+}
+
+.actionDialog::backdrop { background: rgb(15 29 25 / 52%); backdrop-filter: blur(2px); }
+.actionDialog form { display: grid; gap: 14px; padding: 22px; }
+.actionDialog h2 { font-size: 23px; }
+.actionDialog p { color: var(--color-text-muted); line-height: 1.5; }
+.actionDialog .error { color: var(--color-danger); }
+
+.dialogField { display: grid; gap: 7px; color: var(--color-text); font-weight: 700; }
+.dialogField input { min-height: 46px; min-width: 0; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 11px; color: var(--color-text); background: #fff; }
+
+.dialogActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
+.dialogActions button { min-height: 46px; padding: 0 10px; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text); background: var(--color-surface-muted); font: inherit; font-weight: 700; cursor: pointer; }
+.dialogActions .dialogConfirm { border-color: var(--color-brand); color: #fff; background: var(--color-brand); }
+.dialogActions .dialogConfirm:disabled { opacity: .7; cursor: default; }
+
+@media (max-width: 360px) {
+  .adultTopbar,
+  .adultContent { padding-right: 10px; padding-left: 10px; }
+  .adultTopbar > div:first-child strong { font-size: 16px; }
+  .adultBalance { min-width: 94px; padding-inline: 8px; }
+  .adultHero { padding: 19px; }
+  .adultHero > div { align-items: flex-start; }
+  .adultHero h1 { max-width: 190px; font-size: 27px; }
+  .adultHeroEmpty h1 { max-width: none; font-size: 27px; }
+  .adultHero strong { font-size: 13px; }
+  .adultPanel,
+  .adultPage .reviewSection,
+  .adultPage .overdueSection,
+  .adultPage .historySection { padding: 15px; }
+  .dialogActions { grid-template-columns: 1fr; }
 }

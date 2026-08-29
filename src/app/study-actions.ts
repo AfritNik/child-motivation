@@ -8,10 +8,8 @@ import {
   databaseDateFromKey,
   getMoscowDateKey,
 } from "@/lib/domain/daily-cycle";
-import {
-  addUtcDays,
-  calculateWeeklyMode,
-} from "@/lib/domain/weekly-study";
+import { addUtcDays } from "@/lib/domain/weekly-study";
+import { calculateStudyModeForQuarter, saveStudyAveragesForQuarter } from "@/lib/study-service";
 import { revalidatePath } from "next/cache";
 
 export type StudyFormState = {
@@ -26,20 +24,16 @@ async function getAdmin() {
   return user;
 }
 
+async function getWeeklyModeAdmin() {
+  const user = await getCurrentUser();
+  if (!user || !hasPermission(user.role, "SELECT_WEEKLY_MODE")) return null;
+  return user;
+}
+
 async function getCurrentQuarter(date: Date) {
   return db.academicQuarter.findFirst({
     where: { startsOn: { lte: date }, endsOn: { gte: date } },
   });
-}
-
-function parseAverage(value: FormDataEntryValue | null): number | null {
-  if (typeof value !== "string") return null;
-  const normalized = value.trim().replace(",", ".");
-
-  if (!/^[1-5](?:\.\d{1,2})?$/.test(normalized)) return null;
-
-  const average = Number(normalized);
-  return average >= 1 && average <= 5 ? average : null;
 }
 
 export async function saveSubjectAverages(
@@ -57,45 +51,15 @@ export async function saveSubjectAverages(
     return { error: "Сейчас нет учебной четверти. Старые средние не меняются" };
   }
 
-  const subjects = await db.subject.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
-  });
-  const averages = subjects.map((subject) => ({
-    subject,
-    average: parseAverage(formData.get(`average:${subject.id}`)),
-  }));
-
-  if (averages.some((item) => item.average === null)) {
-    return { error: "Введите среднее от 1,00 до 5,00 для каждого предмета" };
-  }
-
-  const changed = averages.filter(
-    ({ subject, average }) =>
-      subject.quarterId !== quarter.id ||
-      subject.currentAverage?.toNumber() !== average,
-  );
-
-  if (changed.length === 0) {
-    return { message: "Средние уже сохранены без изменений" };
-  }
-
   const currentWeek = getMoscowWeekRange(getMoscowDateKey());
   const nextWeekStartsOn = currentWeek.endsBefore;
+  const rawAverages = Object.fromEntries([...formData.entries()]
+    .filter((entry): entry is [string, string] => entry[0].startsWith("average:") && typeof entry[1] === "string")
+    .map(([name, value]) => [name.slice("average:".length), value]));
+  const result = await saveStudyAveragesForQuarter({ quarterId: quarter.id, nextWeekStartsOn, rawAverages });
 
-  await db.$transaction(async (transaction) => {
-    for (const { subject, average } of changed) {
-      await transaction.subject.update({
-        where: { id: subject.id },
-        data: { currentAverage: average, quarterId: quarter.id },
-      });
-    }
-
-    await transaction.weekDecision.updateMany({
-      where: { startsOn: { gte: nextWeekStartsOn }, isStale: false },
-      data: { isStale: true },
-    });
-  });
+  if (result === "invalid") return { error: "Введите среднее от 1,00 до 5,00 для каждого предмета" };
+  if (result === "unchanged") return { message: "Средние уже сохранены без изменений" };
 
   revalidatePath("/");
   return { message: "Средние сохранены. Рассчитайте следующую неделю" };
@@ -107,7 +71,7 @@ export async function calculateNextWeekMode(
 ): Promise<StudyFormState> {
   void _previousState;
   void _formData;
-  const admin = await getAdmin();
+  const admin = await getWeeklyModeAdmin();
 
   if (!admin) return { error: "Расчёт доступен только администратору" };
 
@@ -130,56 +94,13 @@ export async function calculateNextWeekMode(
     };
   }
 
-  const subjects = await db.subject.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
-  });
-  const missing = subjects.filter(
-    (subject) =>
-      subject.currentAverage === null || subject.quarterId !== quarter.id,
-  );
+  const transactionResult = await calculateStudyModeForQuarter({ quarterId: quarter.id, startsOn, endsOn });
 
-  if (missing.length > 0) {
-    return {
-      error: `Сначала сохраните средние текущей четверти: ${missing
-        .map((subject) => subject.name)
-        .join(", ")}`,
-    };
+  if ("missing" in transactionResult && transactionResult.missing) {
+    return { error: `Сначала сохраните средние текущей четверти: ${transactionResult.missing.join(", ")}` };
   }
-
-  const result = calculateWeeklyMode(
-    subjects.map((subject) => ({
-      name: subject.name,
-      priority: subject.priority,
-      average: subject.currentAverage!.toNumber(),
-    })),
-  );
-  const setting = await db.screenModeSetting.findUnique({
-    where: { mode: result.mode },
-  });
-
-  if (!setting) return { error: "Для рассчитанного режима не задан лимит времени" };
-
-  await db.weekDecision.upsert({
-    where: { startsOn },
-    update: {
-      endsOn,
-      mode: result.mode,
-      dailyLimitMinutes: setting.dailyLimitMinutes,
-      explanation: result.explanation,
-      quarterId: quarter.id,
-      isStale: false,
-      calculatedAt: new Date(),
-    },
-    create: {
-      startsOn,
-      endsOn,
-      mode: result.mode,
-      dailyLimitMinutes: setting.dailyLimitMinutes,
-      explanation: result.explanation,
-      quarterId: quarter.id,
-    },
-  });
+  if ("noSetting" in transactionResult) return { error: "Для рассчитанного режима не задан лимит времени" };
+  if ("noQuarter" in transactionResult) return { error: "Текущая четверть уже изменилась" };
 
   revalidatePath("/");
   return { message: "Режим следующей недели рассчитан" };

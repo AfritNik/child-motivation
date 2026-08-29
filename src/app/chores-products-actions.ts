@@ -1,24 +1,18 @@
 "use server";
 
-import {
-  PointReason,
-  Prisma,
-  ReviewStatus,
-} from "@/generated/prisma/client";
+import { ReviewStatus } from "@/generated/prisma/client";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import {
-  canAwardNewProduct,
-  getMoscowWeekRange,
   normalizeProductName,
-  selectChoreCompletionsForPoints,
 } from "@/lib/domain/chores-and-products";
 import {
   databaseDateFromKey,
   getMoscowDateKey,
 } from "@/lib/domain/daily-cycle";
-import { createCappedEarning } from "@/lib/points";
+import { removeNewProductForChild, saveNewProductForChild, setChoreCompletionForChild } from "@/lib/child-queue-service";
+import { approveChoreCompletionById, approveNewProductById, rejectChoreCompletionById } from "@/lib/review-item-service";
 import { revalidatePath } from "next/cache";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
@@ -65,44 +59,9 @@ export async function setChoreCompletion(
     return { ok: false, error: "Неизвестное домашнее дело" };
   }
 
-  const chore = await db.chore.findFirst({
-    where: { id: choreId, isActive: true },
-    select: { id: true },
-  });
-
-  if (!chore) {
-    return { ok: false, error: "Это дело больше не активно" };
-  }
-
   const date = databaseDateFromKey(getMoscowDateKey());
-  const existingCompletion = await db.choreCompletion.findUnique({
-    where: {
-      childId_date_choreId: {
-        childId: child.id,
-        date,
-        choreId,
-      },
-    },
-  });
-
-  if (
-    existingCompletion &&
-    existingCompletion.status !== ReviewStatus.PENDING
-  ) {
-    return { ok: false, error: "Взрослый уже принял решение" };
-  }
-
-  if (checked && !existingCompletion) {
-    await db.choreCompletion.create({
-      data: { childId: child.id, choreId, date },
-    });
-  }
-
-  if (!checked && existingCompletion) {
-    await db.choreCompletion.deleteMany({
-      where: { id: existingCompletion.id, status: ReviewStatus.PENDING },
-    });
-  }
+  const result = await setChoreCompletionForChild(child.id, date, choreId, checked);
+  if (!result.ok) return result;
 
   revalidatePath("/");
   return { ok: true };
@@ -131,19 +90,8 @@ export async function saveNewProduct(
   }
 
   const date = databaseDateFromKey(getMoscowDateKey());
-  const existingEntry = await db.newProductEntry.findUnique({
-    where: { childId_date: { childId: child.id, date } },
-  });
-
-  if (existingEntry && existingEntry.status !== ReviewStatus.PENDING) {
-    return { error: "Взрослый уже принял решение по продукту сегодня" };
-  }
-
-  await db.newProductEntry.upsert({
-    where: { childId_date: { childId: child.id, date } },
-    update: { name },
-    create: { childId: child.id, date, name },
-  });
+  const result = await saveNewProductForChild(child.id, date, name);
+  if (!result.ok) return { error: result.error };
 
   revalidatePath("/");
   return { saved: true };
@@ -156,121 +104,38 @@ export async function removeNewProduct(): Promise<void> {
     return;
   }
 
-  await db.newProductEntry.deleteMany({
-    where: {
-      childId: child.id,
-      date: databaseDateFromKey(getMoscowDateKey()),
-      status: ReviewStatus.PENDING,
-    },
-  });
+  await removeNewProductForChild(child.id, databaseDateFromKey(getMoscowDateKey()));
 
   revalidatePath("/");
-}
-
-async function allocateChorePoints(
-  transaction: Prisma.TransactionClient,
-  childId: string,
-  date: Date,
-): Promise<void> {
-  const completions = await transaction.choreCompletion.findMany({
-    where: { childId, date },
-    include: { pointTransaction: true },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-  });
-  const selectedIds = selectChoreCompletionsForPoints(
-    completions.map((completion) => ({
-      id: completion.id,
-      status: completion.status,
-      pointSlotProcessed:
-        completion.pointTransaction !== null ||
-        completion.pointsProcessedAt !== null,
-    })),
-  );
-
-  for (const completionId of selectedIds) {
-    await createCappedEarning(transaction, {
-      userId: childId,
-      requestedAmount: 1,
-      reason: PointReason.CHORE,
-      source: { choreCompletionId: completionId },
-    });
-    await transaction.choreCompletion.update({
-      where: { id: completionId },
-      data: { pointsProcessedAt: new Date() },
-    });
-  }
 }
 
 export async function approveChoreCompletions(
   formData: FormData,
-): Promise<void> {
+): Promise<ActionResult> {
   const adult = await getAdult();
 
   if (!adult) {
-    return;
+    return { ok: false, error: "Действие недоступно" };
   }
 
-  const completionIds = [
-    ...new Set(
-      formData
-        .getAll("completionId")
-        .filter((value): value is string => typeof value === "string")
-        .filter((value) => UUID_PATTERN.test(value)),
-    ),
-  ].slice(0, 20);
+  const submitted = formData.getAll("completionId");
+  if (submitted.length !== 1 || typeof submitted[0] !== "string" || !UUID_PATTERN.test(submitted[0])) return { ok: false, error: "Некорректные данные" };
+  const completionId = submitted[0];
 
-  if (completionIds.length === 0) {
-    return;
-  }
-
-  await db.$transaction(async (transaction) => {
-    const completions = await transaction.choreCompletion.findMany({
-      where: {
-        id: { in: completionIds },
-        status: ReviewStatus.PENDING,
-      },
-      select: { id: true, childId: true, date: true },
-    });
-
-    if (completions.length === 0) {
-      return;
-    }
-
-    await transaction.choreCompletion.updateMany({
-      where: {
-        id: { in: completions.map((completion) => completion.id) },
-        status: ReviewStatus.PENDING,
-      },
-      data: {
-        status: ReviewStatus.APPROVED,
-        decidedById: adult.id,
-        decidedAt: new Date(),
-        rejectionReason: null,
-      },
-    });
-
-    const affectedDays = new Map(
-      completions.map((completion) => [
-        `${completion.childId}:${completion.date.toISOString()}`,
-        { childId: completion.childId, date: completion.date },
-      ]),
-    );
-
-    for (const { childId, date } of affectedDays.values()) {
-      await allocateChorePoints(transaction, childId, date);
-    }
-  });
+  const updated = await approveChoreCompletionById(completionId, adult.id);
+  if (!updated) return { ok: false, error: "Очередь изменилась — проверьте снова" };
 
   revalidatePath("/");
+  return { ok: true };
 }
 
 export async function rejectChoreCompletion(
   formData: FormData,
-): Promise<void> {
+): Promise<ActionResult> {
   const adult = await getAdult();
 
   if (!adult) {
-    return;
+    return { ok: false, error: "Действие недоступно" };
   }
 
   const completionId = formData.get("completionId");
@@ -281,107 +146,38 @@ export async function rejectChoreCompletion(
     !UUID_PATTERN.test(completionId) ||
     typeof rawReason !== "string"
   ) {
-    return;
+    return { ok: false, error: "Некорректные данные" };
   }
 
   const rejectionReason = rawReason.trim();
 
   if (rejectionReason.length < 2 || rejectionReason.length > 200) {
-    return;
+    return { ok: false, error: "Причина должна содержать от 2 до 200 символов" };
   }
 
-  await db.$transaction(async (transaction) => {
-    const completion = await transaction.choreCompletion.findFirst({
-      where: {
-        id: completionId,
-        status: ReviewStatus.PENDING,
-      },
-      select: { id: true, childId: true, date: true },
-    });
-
-    if (!completion) {
-      return;
-    }
-
-    await transaction.choreCompletion.update({
-      where: { id: completion.id },
-      data: {
-        status: ReviewStatus.REJECTED,
-        decidedById: adult.id,
-        decidedAt: new Date(),
-        rejectionReason,
-      },
-    });
-
-    await allocateChorePoints(
-      transaction,
-      completion.childId,
-      completion.date,
-    );
-  });
+  const updated = await rejectChoreCompletionById(completionId, adult.id, rejectionReason);
+  if (!updated) return { ok: false, error: "Очередь изменилась — проверьте снова" };
 
   revalidatePath("/");
+  return { ok: true };
 }
 
-export async function approveNewProduct(formData: FormData): Promise<void> {
+export async function approveNewProduct(formData: FormData): Promise<ActionResult> {
   const adult = await getAdult();
   const entryId = formData.get("entryId");
 
   if (!adult || typeof entryId !== "string" || !UUID_PATTERN.test(entryId)) {
-    return;
+    return { ok: false, error: "Некорректные данные или действие недоступно" };
   }
 
-  await db.$transaction(async (transaction) => {
-    const entry = await transaction.newProductEntry.findFirst({
-      where: { id: entryId, status: ReviewStatus.PENDING },
-    });
-
-    if (!entry) {
-      return;
-    }
-
-    const entryDateKey = entry.date.toISOString().slice(0, 10);
-    const week = getMoscowWeekRange(entryDateKey);
-
-    const update = await transaction.newProductEntry.updateMany({
-      where: { id: entry.id, status: ReviewStatus.PENDING },
-      data: {
-        status: ReviewStatus.APPROVED,
-        decidedById: adult.id,
-        decidedAt: new Date(),
-        rejectionReason: null,
-      },
-    });
-
-    if (update.count !== 1) {
-      return;
-    }
-
-    const weekEntries = await transaction.newProductEntry.findMany({
-      where: {
-        childId: entry.childId,
-        date: { gte: week.startsOn, lt: week.endsBefore },
-      },
-      include: { pointTransaction: true },
-    });
-    const awardedThisWeek = weekEntries.filter(
-      (weekEntry) => weekEntry.pointTransaction !== null,
-    ).length;
-
-    if (canAwardNewProduct(awardedThisWeek)) {
-      await createCappedEarning(transaction, {
-        userId: entry.childId,
-        requestedAmount: 1,
-        reason: PointReason.NEW_PRODUCT,
-        source: { newProductEntryId: entry.id },
-      });
-    }
-  });
+  const updated = await approveNewProductById(entryId, adult.id);
+  if (!updated) return { ok: false, error: "Очередь изменилась — проверьте снова" };
 
   revalidatePath("/");
+  return { ok: true };
 }
 
-export async function rejectNewProduct(formData: FormData): Promise<void> {
+export async function rejectNewProduct(formData: FormData): Promise<ActionResult> {
   const adult = await getAdult();
   const entryId = formData.get("entryId");
   const rawReason = formData.get("rejectionReason");
@@ -392,16 +188,16 @@ export async function rejectNewProduct(formData: FormData): Promise<void> {
     !UUID_PATTERN.test(entryId) ||
     typeof rawReason !== "string"
   ) {
-    return;
+    return { ok: false, error: "Некорректные данные или действие недоступно" };
   }
 
   const rejectionReason = rawReason.trim();
 
   if (rejectionReason.length < 2 || rejectionReason.length > 200) {
-    return;
+    return { ok: false, error: "Причина должна содержать от 2 до 200 символов" };
   }
 
-  await db.newProductEntry.updateMany({
+  const update = await db.newProductEntry.updateMany({
     where: {
       id: entryId,
       status: ReviewStatus.PENDING,
@@ -413,6 +209,8 @@ export async function rejectNewProduct(formData: FormData): Promise<void> {
       rejectionReason,
     },
   });
+  if (update.count !== 1) return { ok: false, error: "Очередь изменилась — проверьте снова" };
 
   revalidatePath("/");
+  return { ok: true };
 }

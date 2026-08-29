@@ -1,11 +1,14 @@
 import { RewardRequestStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import {
+  cancelOwnRewardRequest,
   cancelRewardRequest,
   fulfillRewardRequest,
   grantRewardDirectly,
   requestReward,
 } from "./reward-actions";
+import { FormSubmitButton } from "./form-submit-button";
+import { ConfirmActionDialog } from "./action-dialog";
 import styles from "./page.module.css";
 
 function formatRequestDate(date: Date): string {
@@ -18,10 +21,10 @@ function formatRequestDate(date: Date): string {
   }).format(date);
 }
 
-function statusText(status: RewardRequestStatus): string {
+function statusText(status: RewardRequestStatus, selfCancelled = false): string {
   if (status === RewardRequestStatus.PENDING) return "Ожидает решения";
   if (status === RewardRequestStatus.FULFILLED) return "Награда получена";
-  return "Отменено";
+  return selfCancelled ? "Отменено Сашей" : "Отменено взрослым";
 }
 
 export async function ChildRewardSection({
@@ -31,22 +34,26 @@ export async function ChildRewardSection({
   userId: string;
   balance: number;
 }) {
-  const [rewards, requests] = await Promise.all([
+  const [rewards, pendingRequests, decidedRequests] = await Promise.all([
     db.reward.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
     }),
     db.rewardRequest.findMany({
-      where: { userId },
+      where: { userId, status: RewardRequestStatus.PENDING },
+      include: { reward: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.rewardRequest.findMany({
+      where: { userId, status: { not: RewardRequestStatus.PENDING } },
       include: { reward: true },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
   ]);
+  const requests = [...pendingRequests, ...decidedRequests];
   const pendingRewardIds = new Set(
-    requests
-      .filter((request) => request.status === RewardRequestStatus.PENDING)
-      .map((request) => request.rewardId),
+    pendingRequests.map((request) => request.rewardId),
   );
 
   return (
@@ -54,7 +61,7 @@ export async function ChildRewardSection({
       <div className={styles.sectionHeading}>
         <div>
           <p className={styles.eyebrow}>Обмен баллов</p>
-          <h2>Награды</h2>
+          <h1>Награды</h1>
         </div>
       </div>
       <p className={styles.sectionDescription}>
@@ -75,16 +82,16 @@ export async function ChildRewardSection({
               <p>{reward.description}</p>
               <form action={requestReward}>
                 <input type="hidden" name="rewardId" value={reward.id} />
-                <button
-                  type="submit"
+                <FormSubmitButton
                   disabled={!hasEnoughPoints || alreadyPending}
+                  pendingLabel="Отправляю…"
                 >
                   {alreadyPending
                     ? "Уже ожидает решения"
                     : hasEnoughPoints
                       ? "Запросить"
                       : `Не хватает ${reward.cost - balance} б.`}
-                </button>
+                </FormSubmitButton>
               </form>
             </article>
           );
@@ -98,11 +105,22 @@ export async function ChildRewardSection({
             <div key={request.id} className={styles.rewardHistoryItem}>
               <span>{request.reward.name}</span>
               <strong data-status={request.status}>
-                {statusText(request.status)}
+                {statusText(request.status, request.decidedById === null)}
               </strong>
               <small>
                 {request.cost} б. · {formatRequestDate(request.createdAt)}
               </small>
+              {request.status === RewardRequestStatus.PENDING ? (
+                <form action={cancelOwnRewardRequest}>
+                  <input type="hidden" name="requestId" value={request.id} />
+                  <FormSubmitButton
+                    className={styles.cancelRequestButton}
+                    pendingLabel="Отменяю…"
+                  >
+                    Отменить запрос
+                  </FormSubmitButton>
+                </form>
+              ) : null}
             </div>
           ))}
         </div>
@@ -118,13 +136,24 @@ export async function AdultRewardSection({
   childId: string;
   balance: number;
 }) {
-  const [rewards, requests] = await Promise.all([
+  const [rewards, pendingRequests, decidedRequests] = await Promise.all([
     db.reward.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
     }),
     db.rewardRequest.findMany({
-      where: { userId: childId },
+      where: { userId: childId, status: RewardRequestStatus.PENDING },
+      include: {
+        reward: true,
+        decidedBy: { select: { displayName: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.rewardRequest.findMany({
+      where: {
+        userId: childId,
+        status: { not: RewardRequestStatus.PENDING },
+      },
       include: {
         reward: true,
         decidedBy: { select: { displayName: true } },
@@ -133,18 +162,11 @@ export async function AdultRewardSection({
       take: 20,
     }),
   ]);
-  const pendingRequests = requests.filter(
-    (request) => request.status === RewardRequestStatus.PENDING,
-  );
-  const decidedRequests = requests.filter(
-    (request) => request.status !== RewardRequestStatus.PENDING,
-  );
 
   return (
     <section className={styles.reviewSection}>
-      <div className={styles.sectionHeading}>
-        <h2>Награды</h2>
-        <span className={styles.counter}>{balance} баллов доступно</span>
+      <div className={styles.adultSectionHeading}>
+        <h1>Награды</h1>
       </div>
 
       <div className={styles.rewardHistory}>
@@ -166,18 +188,27 @@ export async function AdultRewardSection({
                   </small>
                 </div>
                 <div className={styles.rewardActions}>
-                  <form action={fulfillRewardRequest}>
-                    <input type="hidden" name="requestId" value={request.id} />
-                    <button type="submit" disabled={!hasEnoughPoints}>
-                      {hasEnoughPoints ? "Выдана" : "Недостаточно баллов"}
-                    </button>
-                  </form>
-                  <form action={cancelRewardRequest}>
-                    <input type="hidden" name="requestId" value={request.id} />
-                    <button type="submit" className={styles.cancelButton}>
-                      Отменить
-                    </button>
-                  </form>
+                  {hasEnoughPoints ? (
+                    <ConfirmActionDialog
+                      action={fulfillRewardRequest}
+                      fields={[{ name: "requestId", value: request.id }]}
+                      triggerLabel="Выдана"
+                      title="Выдать награду?"
+                      description={`${request.reward.name}. Баланс: ${balance} → ${balance - request.cost}. Будет списано ${request.cost} баллов.`}
+                      confirmLabel="Выдать и списать"
+                    />
+                  ) : (
+                    <button type="button" disabled>Недостаточно баллов</button>
+                  )}
+                  <ConfirmActionDialog
+                    action={cancelRewardRequest}
+                    fields={[{ name: "requestId", value: request.id }]}
+                    triggerLabel="Отменено"
+                    title="Отменить запрос?"
+                    description={`${request.reward.name}. Баланс не изменится, запрос будет закрыт.`}
+                    confirmLabel="Отменить запрос"
+                    triggerClassName={styles.cancelButton}
+                  />
                 </div>
               </article>
             );
@@ -195,14 +226,20 @@ export async function AdultRewardSection({
                 <strong>{reward.cost} б.</strong>
               </div>
               <p>{reward.description}</p>
-              <form action={grantRewardDirectly}>
-                <input type="hidden" name="rewardId" value={reward.id} />
-                <button type="submit" disabled={balance < reward.cost}>
-                  {balance >= reward.cost
-                    ? "Выдать"
-                    : `Не хватает ${reward.cost - balance} б.`}
+              {balance >= reward.cost ? (
+                <ConfirmActionDialog
+                  action={grantRewardDirectly}
+                  fields={[{ name: "rewardId", value: reward.id }]}
+                  triggerLabel="Выдать"
+                  title="Выдать награду напрямую?"
+                  description={`${reward.name}. Баланс: ${balance} → ${balance - reward.cost}. Будет списано ${reward.cost} баллов.`}
+                  confirmLabel="Выдать и списать"
+                />
+              ) : (
+                <button type="button" disabled>
+                  Не хватает {reward.cost - balance} б.
                 </button>
-              </form>
+              )}
             </article>
           ))}
         </div>
@@ -215,10 +252,13 @@ export async function AdultRewardSection({
             <div key={request.id} className={styles.rewardHistoryItem}>
               <span>{request.reward.name}</span>
               <strong data-status={request.status}>
-                {statusText(request.status)}
+                {statusText(request.status, request.decidedById === null)}
               </strong>
               <small>
-                {request.cost} б. · {request.decidedBy?.displayName ?? "Взрослый"}
+                {request.cost} б. · {request.decidedBy?.displayName ??
+                  (request.status === RewardRequestStatus.CANCELLED
+                    ? "Отменено ребёнком"
+                    : "Взрослый")}
               </small>
             </div>
           ))}

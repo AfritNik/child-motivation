@@ -23,7 +23,7 @@ export function DailyCheckToggle({
   status,
   rejectionReason,
 }: DailyCheckToggleProps) {
-  const initialChecked = status !== null;
+  const initialChecked = status === "PENDING" || status === "APPROVED";
   const [checked, setChecked] = useState(initialChecked);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -72,10 +72,15 @@ export function DailyCheckToggle({
         </span>
         <b>+{points}</b>
       </label>
-      <p className={styles.itemStatus} data-status={status ?? "EMPTY"}>
+      <p
+        className={styles.itemStatus}
+        data-status={status ?? "EMPTY"}
+        role="status"
+        aria-live="polite"
+      >
         {pending ? "Сохраняю…" : statusText}
       </p>
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error ? <p className={styles.error} role="alert">{error}</p> : null}
     </div>
   );
 }
