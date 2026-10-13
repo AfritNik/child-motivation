@@ -1,3 +1,71 @@
+.studyJournal [data-tone="red"] { --study-tone: #ac403b; }
+.studyJournal [data-tone="orange"] { --study-tone: #aa5419; }
+.studyJournal [data-tone="yellow"] { --study-tone: #896915; }
+.studyJournal [data-tone="green"] { --study-tone: #287348; }
+.studyJournal [data-tone="cyan"] { --study-tone: #14768d; }
+.studyJournal [data-tone="blue"] { --study-tone: #3b60b8; }
+.studyJournal [data-tone="purple"] { --study-tone: #7b47a9; }
+.studyJournal .sectionHeading { flex-wrap: wrap; }
+.studyJournal .sectionHeading h1 { font-size: clamp(22px, 4vw, 28px); }
+.studyJournal button { min-height: 44px; border: 1px solid #dce3db; border-radius: 12px; padding: 10px 14px; background: #fffefa; color: #294238; font: inherit; cursor: pointer; }
+.studyJournal button:disabled { opacity: .55; cursor: default; }
+.studyJournal button:hover:not(:disabled) { background: #eef3eb; }
+.studyJournal .journalPrimary { background: #294b3c; color: #fffefa; border-color: #294b3c; }
+.studyJournal .journalPrimary:hover:not(:disabled) { background: #365e4b; }
+.timeScale { display: flex; gap: 5px; margin: 20px 0; }
+.timeScale > span { flex: 1; min-width: 0; text-align: center; font-size: 11px; color: #596c63; font-variant-numeric: tabular-nums; }
+.timeScale i { display: block; height: 6px; margin-bottom: 6px; border-radius: 4px; background: var(--study-tone); }
+.studyJournal .timeValue { display: table; padding: 6px 8px; margin: 6px 0 0; border-radius: 10px; font-size: clamp(18px, 4vw, 22px); color: var(--study-tone, #52665b); background: color-mix(in srgb, var(--study-tone, #52665b) 10%, #fffefa); white-space: nowrap; }
+.timeSummary { padding: 16px; margin-top: 16px; border: 1px solid #dce3db; border-radius: 16px; background: #f6f7f3; scroll-margin-top: 20px; }
+.timeComparison { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.timeComparison article { min-width: 0; }
+.timeComparison article > span { font-size: 13px; color: #52665b; }
+.timeArrow { color: #68796e; font-size: 22px; }
+.timeSummary p { font-size: 14px; line-height: 1.5; margin: 12px 0; }
+.timeSummary .timeCaption { color: #52665b; font-size: 12px; margin: 8px 0 0; }
+.timeSummary:focus-visible { outline: 2px solid #294b3c; outline-offset: 3px; }
+.studyJournal .modeCard small { display: block; margin-top: 8px; }
+.studyJournal .successMessage:empty { display: none; }
+.timeRules { color: #52665b; font-size: 14px; margin: 4px 0 16px; }
+.timeRules summary { min-height: 44px; padding: 12px 0; cursor: pointer; font-weight: 700; }
+.timeRules dl { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; margin: 12px 0; }
+.timeRules dd { margin: 0; font-weight: 700; }
+.timeRules p { margin: 12px 0; line-height: 1.6; }
+.journalTitle { margin: 0 0 8px; font-size: 22px; }
+.journalHelp { margin: 0; font-size: 13px; color: #52665b; }
+.studyJournal .subjectCard { padding: 16px; overflow: visible; }
+.journalSubjectHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.studyJournal .subjectRow { flex: 1; min-width: 0; flex-wrap: wrap; gap: 4px 16px; padding: 0; background: transparent; }
+.studyJournal .subjectRow h3 { margin: 0; font-size: 17px; }
+.studyJournal .journalAverage { color: var(--study-tone, #52665b); font-size: 20px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.studyJournal .journalAverage small { color: #52665b; }
+.journalMarks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.studyJournal .journalMark { display: inline-grid; place-items: center; min-width: 44px; min-height: 44px; padding: 6px 10px; font-size: 19px; font-weight: 700; border-radius: 10px; background: #f1f3ed; color: #304b3c; }
+.studyJournal .addMark { flex-shrink: 0; padding: 8px 10px; font-size: 14px; }
+.studyJournal .journalMark[aria-pressed="true"] { background: #294b3c; color: #fffefa; border-color: #294b3c; box-shadow: 0 0 0 2px #f1f3ee, 0 0 0 4px #294b3c; }
+.inlineMarkEditor { border-top: 1px solid #dce3db; margin-top: 16px; padding-top: 16px; scroll-margin-bottom: 100px; }
+.inlineMarkEditor h4 { margin: 0 0 12px; }
+.gradeChoices, .gradeActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.gradeChoices button { min-width: 48px; font-size: 19px; }
+.studyJournal .gradeChoices button[aria-pressed="true"] { background: #294b3c; color: #fffefa; }
+.studyJournal .deleteMark { color: #a13530; }
+.bonusHint { color: #52665b; font-size: 12px; line-height: 1.5; margin: 8px 0 0; }
+.bonusHint[data-active="true"] { color: #287348; }
+.studyJournal .markNotice { padding: 0; }
+.studyJournal .journalFeedback { color: #287348; font-size: 14px; margin: 12px 0 0; }
+.studyJournal .journalFeedback:empty { display: none; }
+.timeChangeNotice { margin-top: 8px; }
+.timeChangeNotice p { font-size: 13px; line-height: 1.5; margin: 0 0 8px; color: #52665b; }
+.timeChangeNotice button { font-size: 13px; }
+.markUndo { font-size: 13px; margin-top: 12px; }
+.markUndo button { text-decoration: underline; }
+@media (max-width: 500px) {
+  .studyJournal .modeGrid { grid-template-columns: 1fr; }
+  .studyJournal .timeValue { font-size: 18px; }
+  .timeRules dl { grid-template-columns: 1fr; gap: 4px; }
+  .timeRules dd { margin-bottom: 10px; }
+}
+
 .page {
   min-height: 100vh;
   display: grid;
@@ -614,6 +682,43 @@
   color: #a32727;
   font-size: 18px;
 }
+
+.subjectCard {
+  border-radius: 12px;
+  background: #f1f3ee;
+  overflow: hidden;
+}
+
+.subjectRow strong small {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.markList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px 12px;
+  list-style: none;
+}
+
+.markList li {
+  display: grid;
+  gap: 3px;
+  min-width: 46px;
+  padding: 7px;
+  text-align: center;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.markList strong { font-size: 19px; color: #26724b; }
+.markList strong[data-grade="3"] { color: #9a6100; }
+.markList strong[data-grade="1"],
+.markList strong[data-grade="2"] { color: #a32727; }
+.markList time { color: #53646c; font-size: 12px; }
+.markNotice { margin: 0; padding: 0 14px 12px; color: #53646c; font-size: 13px; }
 
 .studyNotice,
 .successMessage {

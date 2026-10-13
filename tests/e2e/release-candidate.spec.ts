@@ -50,11 +50,18 @@ test.describe.serial("release candidate journey", () => {
 
     await page.getByRole("link", { name: "Учёба" }).click();
     await expect(page).toHaveURL(/tab=study/);
+    const marks = page.getByRole("article", { name: "Математика", exact: true });
+    await expect(marks).toContainText("4,00");
+    await expect(page.getByRole("button", { name: "+ Оценка", exact: true })).toHaveCount(0);
+    for (const width of [320, 430]) {
+      await assertResponsive(page, width);
+      await page.screenshot({ path: testInfo.outputPath(`study-marks-${width}.png`), fullPage: true });
+    }
     await page.getByRole("link", { name: "Дела" }).click();
     await expect(page).toHaveURL(/tab=chores/);
     await page.goBack();
     await expect(page).toHaveURL(/tab=study/);
-    await expect(page.getByRole("heading", { name: "Экранный режим" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Оценки и время за компьютером" })).toBeVisible();
     await page.goForward();
     await expect(page).toHaveURL(/tab=chores/);
     await expect(page.getByRole("heading", { name: "Домашние дела" })).toBeVisible();
@@ -70,6 +77,8 @@ test.describe.serial("release candidate journey", () => {
     await expect(page.getByText("Ожидает подтверждения взрослого")).toBeVisible();
 
     await page.locator('nav a[href="/?tab=rewards"]').click();
+    await expect(page.getByRole("heading", { name: "Сладкое из пекарни", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Чипсы или другая вкусность", exact: true })).toBeVisible();
     for (const width of [320, 430]) await assertResponsive(page, width);
     await page.getByRole("button", { name: "Запросить" }).first().click();
     await expect(page.getByRole("button", { name: "Отменить запрос" })).toBeVisible();
@@ -108,14 +117,49 @@ test.describe.serial("release candidate journey", () => {
 
     await page.getByRole("link", { name: "Учёба" }).click();
     for (const width of [320, 430]) await assertResponsive(page, width);
-    const russianAverage = page.getByLabel("Русский язык");
-    await russianAverage.fill("3,20");
-    await expect(page.getByText("Сначала сохраните изменённые средние")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Рассчитать следующую неделю" })).toBeDisabled();
-    await page.getByRole("button", { name: "Сохранить средние" }).click();
-    await expect(page.getByText(/Средние сохранены|Средние уже сохранены/)).toBeVisible();
-    await page.getByRole("button", { name: "Рассчитать следующую неделю" }).click();
-    await expect(page.getByText("Режим следующей недели рассчитан")).toBeVisible();
+    const russian = page.getByRole("article", { name: "Русский язык", exact: true });
+    await expect(page.locator('[aria-label="Шкала времени в минутах"]')).not.toBeVisible();
+    await page.getByText("Как считается время", { exact: true }).click();
+    await expect(page.getByText(/Потолка в два часа нет/)).toBeVisible();
+    await expect(page.locator('[aria-label="Шкала времени в минутах"]')).toContainText("130");
+    await page.getByText("Как считается время", { exact: true }).click();
+    await expect(page.getByText("Нажмите на оценку, чтобы исправить её.", { exact: true })).toBeVisible();
+    await russian.getByRole("button", { name: "+ Оценка", exact: true }).click();
+    const form = russian.getByRole("form");
+    await expect(form.getByRole("button", { name: "1", exact: true })).toHaveCount(0);
+    await expect(form.locator('input[type="date"]')).toHaveCount(0);
+    await form.getByRole("button", { name: "3", exact: true }).click();
+    await form.getByRole("button", { name: "Сохранить", exact: true }).click();
+    await expect(form).toHaveCount(0);
+    await expect(russian).toContainText("3,00");
+    await expect(russian.getByRole("status")).toHaveText("Оценка сохранена");
+    await russian.getByRole("button", { name: "К применению времени ↑" }).click();
+    await expect(page.locator('[aria-label="Время за компьютером"]')).toBeFocused();
+    await expect(page.getByRole("article", { name: "Действующее время", exact: true })).toContainText("60 мин");
+    await page.getByRole("button", { name: "Применить сейчас", exact: true }).click();
+    await expect(page.getByRole("article", { name: "Действующее время", exact: true })).toContainText("30 мин");
+    await russian.getByRole("button", { name: /Оценка 3, запись 1/ }).click();
+    await form.getByRole("button", { name: "5", exact: true }).click();
+    await form.getByRole("button", { name: "Сохранить", exact: true }).click();
+    await expect(russian).toContainText("5,00");
+    await expect(page.getByRole("article", { name: "Действующее время", exact: true })).toContainText("30 мин");
+    await russian.getByRole("button", { name: /Оценка 5, запись 1/ }).click();
+    await expect(russian.getByRole("button", { name: /Оценка 5, запись 1/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(form.getByRole("button", { name: "5", exact: true })).toBeFocused();
+    for (const width of [320, 390, 430, 1280]) {
+      await assertResponsive(page, width);
+      const inset = await russian.evaluate((card) => {
+        const mark = card.querySelector('button[aria-label^="Оценка"]')!;
+        return mark.getBoundingClientRect().left - card.getBoundingClientRect().left;
+      });
+      expect(inset).toBeGreaterThanOrEqual(16);
+      await page.screenshot({ path: testInfo.outputPath(`study-reviewed-${width}.png`), fullPage: true });
+    }
+    await page.screenshot({ path: testInfo.outputPath("study-inline-editor.png"), fullPage: true });
+    await form.getByRole("button", { name: "Удалить оценку", exact: true }).click();
+    await expect(russian).toContainText("Оценок пока нет");
+    await russian.getByRole("button", { name: "Отменить удаление", exact: true }).click();
+    await expect(russian).toContainText("5,00");
 
     await page.locator('nav a[href="/?tab=rewards"]').click();
     for (const width of [320, 430]) await assertResponsive(page, width);
@@ -151,6 +195,8 @@ test.describe.serial("release candidate journey", () => {
     await expect(page.getByText("Привет, Дедушка!")).toBeVisible();
     await page.getByRole("link", { name: "Учёба" }).click();
     await expect(page.getByRole("button", { name: "Сохранить средние" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "+ Оценка", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Применить сейчас", exact: true })).toHaveCount(0);
     for (const width of [320, 430]) await assertResponsive(page, width);
     await page.locator('nav a[href="/?tab=rewards"]').click();
     await expect(page.getByLabel("Изменение баллов")).toHaveCount(0);

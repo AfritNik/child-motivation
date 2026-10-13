@@ -60,7 +60,7 @@ export function calculateWeeklyMode(subjects: readonly SubjectForMode[]): {
   return {
     mode: ScreenMode.FULL,
     explanation:
-      "Все приоритетные предметы находятся в зелёной зоне, красных предметов нет.",
+      "Среди предметов с оценками все приоритетные находятся в зелёной зоне, красных предметов нет.",
   };
 }
 

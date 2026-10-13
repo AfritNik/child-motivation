@@ -233,6 +233,7 @@ model AcademicQuarter {
   endsOn        DateTime       @db.Date
   subjects      Subject[]
   weekDecisions WeekDecision[]
+  marks         StudyMark[]
 
   @@unique([schoolYear, number])
   @@index([startsOn, endsOn])
@@ -248,13 +249,38 @@ model Subject {
   quarterId      String?          @db.Uuid
   updatedAt      DateTime         @updatedAt @db.Timestamptz(3)
   quarter        AcademicQuarter? @relation(fields: [quarterId], references: [id], onDelete: Restrict)
+  marks          StudyMark[]
 
   @@index([isActive, sortOrder])
+}
+
+model StudyMark {
+  id        String   @id @default(uuid()) @db.Uuid
+  subjectId String   @db.Uuid
+  quarterId String   @db.Uuid
+  date      DateTime? @db.Date
+  position  Int
+  value     Int
+  source    String
+  deletedAt DateTime? @db.Timestamptz(3)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  quarter   AcademicQuarter @relation(fields: [quarterId], references: [id], onDelete: Restrict)
+
+  @@unique([subjectId, quarterId, date, position])
+  @@index([quarterId, date])
 }
 
 model ScreenModeSetting {
   mode              ScreenMode @id
   dailyLimitMinutes Int
+}
+
+// One explicitly applied limit; marks never change it automatically.
+model ScreenTimeState {
+  id                Int      @id @default(1)
+  dailyLimitMinutes Int
+  explanation       String
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
 }
 
 model WeekDecision {

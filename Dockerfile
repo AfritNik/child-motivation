@@ -6,10 +6,9 @@ RUN apt-get update \
 COPY package.json package-lock.json ./
 RUN npm ci
 
-FROM node:22-bookworm-slim AS builder
+FROM dependencies AS builder
 WORKDIR /app
 ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
-COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 

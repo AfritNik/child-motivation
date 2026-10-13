@@ -90,22 +90,70 @@ const initialQuarters = [
 
 const initialSubjects = [
   {
-    id: "10000000-0000-4000-8000-000000000001",
-    name: "Русский язык",
+    id: "10000000-0000-4000-8000-000000000002",
+    name: "Математика",
     priority: SubjectPriority.HIGH,
     sortOrder: 1,
   },
   {
-    id: "10000000-0000-4000-8000-000000000002",
-    name: "Математика",
+    id: "10000000-0000-4000-8000-000000000001",
+    name: "Русский язык",
     priority: SubjectPriority.HIGH,
     sortOrder: 2,
+  },
+  {
+    id: "10000000-0000-4000-8000-000000000006",
+    name: "Литература",
+    priority: SubjectPriority.NORMAL,
+    sortOrder: 3,
   },
   {
     id: "10000000-0000-4000-8000-000000000003",
     name: "Английский язык",
     priority: SubjectPriority.HIGH,
-    sortOrder: 3,
+    sortOrder: 4,
+  },
+  {
+    id: "10000000-0000-4000-8000-000000000004",
+    name: "Биология",
+    priority: SubjectPriority.NORMAL,
+    sortOrder: 5,
+  },
+  {
+    id: "10000000-0000-4000-8000-000000000010",
+    name: "География",
+    priority: SubjectPriority.NORMAL,
+    sortOrder: 6,
+  },
+  {
+    id: "10000000-0000-4000-8000-000000000009",
+    name: "История",
+    priority: SubjectPriority.NORMAL,
+    sortOrder: 7,
+  },
+  {
+    id: "10000000-0000-4000-8000-000000000011",
+    name: "Музыка",
+    priority: SubjectPriority.LOW,
+    sortOrder: 8,
+  },
+  {
+    id: "10000000-0000-4000-8000-000000000005",
+    name: "Физкультура",
+    priority: SubjectPriority.LOW,
+    sortOrder: 9,
+  },
+  {
+    id: "10000000-0000-4000-8000-000000000007",
+    name: "Труд",
+    priority: SubjectPriority.LOW,
+    sortOrder: 10,
+  },
+  {
+    id: "10000000-0000-4000-8000-000000000008",
+    name: "ИЗО",
+    priority: SubjectPriority.LOW,
+    sortOrder: 11,
   },
 ] as const;
 
@@ -152,14 +200,20 @@ const initialChores = [
     instruction: "Заранее договориться со взрослым, какую зону убрать.",
     sortOrder: 7,
   },
+  {
+    id: "30000000-0000-4000-8000-000000000008",
+    name: "Мытьё посуды",
+    instruction: "Вымыть посуду и оставить раковину чистой.",
+    sortOrder: 8,
+  },
 ] as const;
 
 const initialRewards = [
   {
     id: "40000000-0000-4000-8000-000000000001",
-    name: "Дополнительные 30 минут экранного времени",
+    name: "Дополнительные 30 минут игры в компьютер",
     description:
-      "30 дополнительных минут в заранее выбранный день. Сначала договориться со взрослым.",
+      "30 дополнительных минут игры в компьютер. День заранее согласовать со взрослым.",
     cost: 10,
     sortOrder: 1,
   },
@@ -177,6 +231,30 @@ const initialRewards = [
     description: "Дату и остальные условия заранее согласовать со взрослым.",
     cost: 25,
     sortOrder: 3,
+  },
+] as const;
+
+const additionalRewards = [
+  {
+    id: "40000000-0000-4000-8000-000000000004",
+    name: "Дополнительные 15 минут игры в телефоне",
+    description: "15 дополнительных минут игры в телефоне. День заранее согласовать со взрослым.",
+    cost: 10,
+    sortOrder: 4,
+  },
+  {
+    id: "40000000-0000-4000-8000-000000000005",
+    name: "Сладкое из пекарни",
+    description: "Одна сладость из пекарни на выбор. Покупку согласовать со взрослым.",
+    cost: 25,
+    sortOrder: 5,
+  },
+  {
+    id: "40000000-0000-4000-8000-000000000006",
+    name: "Чипсы или другая вкусность",
+    description: "Одна упаковка чипсов или другая согласованная вкусность. Размер порции согласовать со взрослым.",
+    cost: 40,
+    sortOrder: 6,
   },
 ] as const;
 
@@ -227,7 +305,7 @@ async function seed() {
     });
   }
 
-  for (const reward of initialRewards) {
+  for (const reward of [...initialRewards, ...additionalRewards]) {
     await prisma.reward.upsert({
       where: { id: reward.id },
       update: reward,
